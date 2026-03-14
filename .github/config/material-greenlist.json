@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "version": "1.0",
+    "aligned_with": "NBSV_MASTER_KB_v4.0",
+    "description": "Machine-readable green-light / red-light material reference for Question 3 producibility check. Any single red-light material = instant kill.",
+    "rule": "If any material in the product is in the red_light list — stop. Do not advance."
+  },
+
+  "green_light": {
+    "description": "Egyptian workshops can source and produce with these materials. A product made only from these passes the materials check.",
+    "materials": [
+      {
+        "material": "MDF",
+        "variants": ["MDF board", "MDF sheet", "medium-density fibreboard"],
+        "local_sources": ["Timber yards in every Cairo neighborhood", "Wholesale in Imbaba, Shubra El Kheima"],
+        "workshop_capability": "Laser cutting, CNC routing, hand cutting, assembly"
+      },
+      {
+        "material": "Plywood",
+        "variants": ["plywood sheet", "marine plywood", "birch ply"],
+        "local_sources": ["Same timber yards as MDF"],
+        "workshop_capability": "Cutting, shaping, assembly"
+      },
+      {
+        "material": "Solid wood",
+        "variants": ["pine", "beech", "local timber"],
+        "local_sources": ["Timber markets in Daher, Azbakeya"],
+        "workshop_capability": "Turning, carving, cutting, joining"
+      },
+      {
+        "material": "Acrylic / perspex sheet",
+        "variants": ["acrylic sheet", "perspex", "plexiglass", "clear acrylic", "colored acrylic"],
+        "local_sources": ["Acrylic shops in Nasr City, Heliopolis, Shubra"],
+        "workshop_capability": "Laser cutting, CNC routing, heat bending"
+      },
+      {
+        "material": "Aluminum sheet",
+        "variants": ["aluminum sheet", "aluminium sheet", "anodized aluminum"],
+        "local_sources": ["Shubra El Kheima industrial zone — Egypt produces aluminum domestically"],
+        "workshop_capability": "Cutting, bending, punching"
+      },
+      {
+        "material": "Standard fabric / textile / canvas",
+        "variants": ["cotton fabric", "canvas", "polyester", "felt", "non-woven fabric"],
+        "local_sources": ["Textile markets in Moski, Ataba, Wekalet El Balah"],
+        "workshop_capability": "Cutting, sewing, heat bonding"
+      },
+      {
+        "material": "Foam / sponge / EVA sheet",
+        "variants": ["foam sheet", "sponge", "EVA foam", "craft foam"],
+        "local_sources": ["Upholstery suppliers, hardware markets"],
+        "workshop_capability": "Cutting, gluing, shaping"
+      },
+      {
+        "material": "Standard hardware",
+        "variants": ["screws", "hinges", "brackets", "tubes", "knobs", "handles", "hooks", "magnets (standard)"],
+        "local_sources": ["Hardware stores everywhere / Ataba / El Moski for decorative hardware"],
+        "workshop_capability": "Assembly, installation"
+      },
+      {
+        "material": "Heat press / screen print blanks",
+        "variants": ["plain tote bags", "plain fabric items", "transfer-ready blanks"],
+        "local_sources": ["Screen printing shops in all Cairo neighborhoods"],
+        "workshop_capability": "Heat transfer, screen printing, sublimation"
+      },
+      {
+        "material": "Basic resin / epoxy",
+        "variants": ["clear epoxy resin", "two-part resin", "casting resin"],
+        "local_sources": ["Craft supply shops, construction supply markets"],
+        "workshop_capability": "Pouring, casting — requires ventilation (balcony acceptable)"
+      },
+      {
+        "material": "Finish materials (founder-applied)",
+        "variants": ["sandpaper", "wood stain", "water-based paint", "felt lining", "ribbon", "basic knobs", "hot glue"],
+        "local_sources": ["Hardware stores / El Sawy paint area / Ataba / Moski"],
+        "workshop_capability": "Founder applies at home — no workshop machinery needed"
+      }
+    ]
+  },
+
+  "red_light": {
+    "description": "Any single item from this list in any product = instant kill. No exceptions. No rationalizations.",
+    "materials": [
+      {
+        "material": "Any electronic component",
+        "variants": ["LED", "LED strip", "battery", "USB port", "charging cable", "sensor", "motor", "speaker", "Bluetooth", "WiFi module", "microcontroller", "Arduino", "circuit board"],
+        "reason": "Electronics require specialized production, quality control, and sourcing Egypt cannot match at this price tier. Also: the product must self-sell on a shelf — electronics add explanation requirement."
+      },
+      {
+        "material": "Injection-molded plastic",
+        "variants": ["injection mold", "molded plastic parts", "plastic shells", "plastic housing"],
+        "reason": "Injection molding requires factory-level tooling investment. Egyptian workshops do not have this capability."
+      },
+      {
+        "material": "Precision mechanical movement",
+        "variants": ["gear mechanism", "ratchet", "spring-loaded mechanism", "clockwork", "precision hinge system"],
+        "reason": "Requires factory calibration. Workshop cannot produce at required tolerance."
+      },
+      {
+        "material": "Specialized silicone molds",
+        "variants": ["silicone casting mold", "custom silicone form"],
+        "reason": "Mold production requires specialized tooling. Imported molds = imported core component."
+      },
+      {
+        "material": "Food-grade certified materials",
+        "variants": ["food-safe silicone", "food-grade plastic", "food-contact materials"],
+        "reason": "Egyptian food-grade certification adds regulatory complexity incompatible with speed-to-market model."
+      },
+      {
+        "material": "Imported core components",
+        "variants": ["any part that must be shipped from outside Egypt", "specialized imported hardware"],
+        "reason": "Import dependency reintroduces the vulnerability that killed the 2018 model. Zero exceptions."
+      },
+      {
+        "material": "Toxic finishing chemicals",
+        "variants": ["solvent-based lacquer requiring spray booth", "epoxy requiring industrial ventilation", "chemicals beyond balcony use"],
+        "reason": "Founder finish must be achievable on a home balcony with water-based products only."
+      }
+    ]
+  },
+
+  "semi_diy_finish_materials": {
+    "description": "Materials the founder applies at home as the finish layer. All must be locally available in Egypt.",
+    "approved": [
+      "Sandpaper (multiple grits) — hardware stores",
+      "Water-based wood stain — local paint shops",
+      "Water-based paint — local paint shops",
+      "Felt sheets / fabric scraps — Moski / Ataba",
+      "Hot glue gun + sticks — hardware / stationery",
+      "Wood glue — hardware stores",
+      "Paint brushes — art supply shops",
+      "Clamps (4–6 basic) — hardware stores",
+      "Decorative hardware (knobs, small hinges, handles) — Ataba / El Moski",
+      "Ribbon — stationery / gift shops"
+    ],
+    "kill_conditions": [
+      "Requires spray booth or spray gun",
+      "Requires kiln or oven",
+      "Finish material must be imported",
+      "Finish time exceeds 30 minutes per unit",
+      "Requires specialized equipment not available at hardware stores"
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+name: 🏷️ Bootstrap Labels — One-Time Setup
+
+# Run this once when you first create the repo.
+# Creates all required labels for the NBSV v5.0 agent pipeline.
+# Also run it when upgrading from v4.0 to v5.0 — it skips labels that already exist.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create all NBSV v5.0 labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              // ── Pipeline Stage Labels ──────────────────────────────────
+              { name: 'candidate',            color: '1d76db', description: 'Product candidate in the NBSV pipeline' },
+              { name: 'pending-verification', color: 'e4e669', description: 'Awaiting Q1 Egyptian market check' },
+              { name: 'principle-1-pass',     color: '0075ca', description: 'Q1 passed: never seen in Egypt (all 5 platforms clean)' },
+              { name: 'principle-3-pass',     color: '0e8a16', description: 'All 3 filter questions passed — Brief Forge triggered' },
+              { name: 'brief-ready',          color: '006b75', description: 'Workshop brief generated and ready' },
+              { name: 'pre-sell-confirmed',   color: 'e11d48', description: '2+ shop owners confirmed with 50% deposit' },
+              { name: 'in-production',        color: 'f97316', description: 'Workshop batch in production' },
+              { name: 'closed-won',           color: '22c55e', description: 'Cycle completed: produced, delivered, sold' },
+              { name: 'market-blocked',       color: 'd93f0b', description: 'Product found in Egyptian market — rejected' },
+              { name: 'rejected',             color: 'b60205', description: 'Candidate rejected — failure logged' },
+              { name: 'presell-fail',         color: 'c5221f', description: 'Pre-sell failed: fewer than 2 shops confirmed' },
+              { name: 'presell-stalled',      color: 'f4a460', description: 'Pre-sell brief ready but stalled — no deposits after 14 days' },
+              { name: 'needs-reverification', color: 'fbca04', description: 'Candidate is 14+ days old with no Q1 pass' },
+
+              // ── Production Path Labels ─────────────────────────────────
+              { name: 'semi-diy',             color: '7057ff', description: 'Semi-DIY finish path: workshop base + founder finish' },
+              { name: 'high-signal',          color: 'ffd700', description: 'High backer/view count — prioritize verification' },
+              { name: 'urgent',               color: 'cc317c', description: 'Season window closing — act within 72h' },
+              { name: 'season-amplified',     color: 'bfd4f2', description: 'Seasonal demand amplifier product' },
+              { name: 'season-briefing',      color: '0075ca', description: 'Auto-created by Season Pulse agent' },
+
+              // ── Source Channel Labels ──────────────────────────────────
+              { name: 'source-asian-viral',    color: 'ff6b6b', description: 'Source: Douyin/Xiaohongshu/Korean (4–14 week window)' },
+              { name: 'source-concept-mine',   color: '4ecdc4', description: 'Source: Kickstarter/Makuake/Indiegogo (6–18 months)' },
+              { name: 'source-concept-library',color: '45b7d1', description: 'Source: Yanko/Core77/Behance/Reddit (unlimited window)' },
+              { name: 'source-ai-ideation',    color: 'a29bfe', description: 'Source: AI-originated concept (pre-sell is the validation)' },
+              { name: 'source-github-intel',   color: '6c5ce7', description: 'Source: GitHub DXF/design file repos' },
+
+              // ── Scout Agent Labels (v5.0 NEW) ──────────────────────────
+              { name: 'scout-reddit',          color: 'ff4500', description: 'Discovered by Scout Reddit agent (r/somebodymakethis)' },
+              { name: 'scout-yanko',           color: '0079bf', description: 'Discovered by Scout RSS agent (Yanko Design)' },
+              { name: 'scout-core77',          color: '00518a', description: 'Discovered by Scout RSS agent (Core77)' },
+              { name: 'scout-kickstarter',     color: '05ce78', description: 'Discovered by Scout Kickstarter agent' },
+              { name: 'scout-error',           color: 'e4e669', description: 'Scout agent encountered an error — manual fallback needed' },
+              { name: 'needs-human-review',    color: 'fbca04', description: 'Scout INVESTIGATE verdict — needs founder evaluation' },
+
+              // ── AI Assessment Labels (v5.0 NEW) ────────────────────────
+              { name: 'ai-filter-pass',        color: '0e8a16', description: 'GPT-4o filter result: PASS (verify before acting)' },
+              { name: 'ai-filter-fail',        color: 'b60205', description: 'GPT-4o filter result: FAIL (review before closing)' },
+              { name: 'ai-likely-clear',       color: '00c875', description: 'Gap Sentinel: AI rates market presence as unlikely (still verify)' },
+              { name: 'ai-flagged-found',      color: 'e11d48', description: 'Gap Sentinel: AI rates market presence as likely — verify urgently' },
+
+              // ── Kill Signal Labels ─────────────────────────────────────
+              { name: 'fail-electronics',      color: 'd93f0b', description: 'Kill: electronic component required' },
+              { name: 'fail-injection-mold',   color: 'd93f0b', description: 'Kill: injection molding required' },
+              { name: 'fail-imported-core',    color: 'd93f0b', description: 'Kill: core component must be imported' },
+              { name: 'fail-no-aha',           color: 'd93f0b', description: 'Kill: no AHA in 3 seconds' },
+              { name: 'fail-needs-explanation',color: 'd93f0b', description: 'Kill: requires explanation to understand' },
+              { name: 'fail-cultural-mismatch',color: 'd93f0b', description: 'Kill: cultural fit is Chinese-specific, not Egyptian' },
+              { name: 'fail-market-presence',  color: 'd93f0b', description: 'Kill: found in Egyptian market in any form' },
+              { name: 'fail-margin',           color: 'd93f0b', description: 'Kill: cannot achieve target COGS or margin' },
+              { name: 'fail-complexity',       color: 'd93f0b', description: 'Kill: more than 6 precision assembly steps' },
+              { name: 'fail-behavior-weak',    color: 'd93f0b', description: 'Kill: Egyptian behavior answer is generic, not specific' },
+              { name: 'fail-season-timing',    color: 'd93f0b', description: 'Kill: season window closed before pre-sell could complete' },
+
+              // ── Intelligence Labels ────────────────────────────────────
+              { name: 'intelligence-brief',    color: '7057ff', description: 'Auto-created by Pattern Brain monthly analysis' },
+              { name: 'pattern-analysis',      color: '5319e7', description: 'Contains pattern analysis data' },
+              { name: 'manual-action-needed',  color: 'e4e669', description: 'Requires manual founder action to proceed' },
+            ];
+
+            let created = 0, skipped = 0, errors = 0;
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                created++;
+                console.log(`✓ Created: ${label.name}`);
+              } catch(e) {
+                if (e.status === 422) {
+                  // Label already exists — update it to ensure description is current
+                  try {
+                    await github.rest.issues.updateLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description,
+                    });
+                    skipped++;
+                    console.log(`↻ Updated existing: ${label.name}`);
+                  } catch(updateErr) {
+                    errors++;
+                    console.log(`⚠ Could not update ${label.name}: ${updateErr.message}`);
+                  }
+                } else {
+                  errors++;
+                  console.log(`⚠ Error creating ${label.name}: ${e.message}`);
+                }
+              }
+            }
+
+            console.log(`\n═══ LABEL BOOTSTRAP COMPLETE ═══`);
+            console.log(`✓ Created: ${created}`);
+            console.log(`↻ Updated: ${skipped}`);
+            console.log(`⚠ Errors:  ${errors}`);
+            console.log(`Total:     ${labels.length}`);
+            console.log(`\nNBSV v5.0 label system ready.`);
+            console.log(`Next: run scout agents to start autonomous discovery.`);

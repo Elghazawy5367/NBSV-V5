@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nbsv.engine/schema/candidate/v5",
+  "title": "NBSV Candidate Record v5.0",
+  "description": "Schema for a product candidate in the NBSV pipeline. All data fields map directly to GitHub Issue labels and body sections.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "GitHub Issue number prefixed with 'gh' — e.g. 'gh42'"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100,
+      "description": "Internal product reference name. Never shared with workshop."
+    },
+    "sourceChannel": {
+      "type": "string",
+      "enum": ["asian-viral", "concept-mine", "concept-library", "ai-ideation", "github-intel"],
+      "description": "Which of the 5 NBSV source channels this candidate came from"
+    },
+    "discoveredBy": {
+      "type": "string",
+      "enum": ["founder-manual", "scout-reddit", "scout-yanko", "scout-core77", "scout-kickstarter"],
+      "description": "Whether discovered manually by founder or by a scout agent"
+    },
+    "channelSignal": {
+      "type": "string",
+      "description": "The virality proof from the source channel (e.g. '1.2M views', '840 backers', '650 upvotes')"
+    },
+    "egyptianBehaviorAnswer": {
+      "type": "string",
+      "minLength": 20,
+      "description": "SPECIFIC Egyptian behavior this product replaces or enhances. Must name a behavioral moment, not a generic category."
+    },
+    "principles": {
+      "type": "object",
+      "properties": {
+        "q1_neverBeforeSeen": {
+          "type": "boolean",
+          "description": "All 5 Egyptian platforms checked and clean"
+        },
+        "q2_ahaIn3Seconds": {
+          "type": "boolean",
+          "description": "2+ of 4 involuntary AHA reactions confirmed"
+        },
+        "q3_workshopProducible": {
+          "type": "boolean",
+          "description": "Green-list materials, zero electronics, ≤6 steps, COGS within target"
+        }
+      },
+      "required": ["q1_neverBeforeSeen", "q2_ahaIn3Seconds", "q3_workshopProducible"]
+    },
+    "productionPath": {
+      "type": "string",
+      "enum": ["standard", "semi-diy", "unknown"],
+      "description": "Standard (COGS ≤80 EGP) or Semi-DIY finish (COGS ≤120 EGP, founder adds finish layer)"
+    },
+    "cogsEstimate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 200,
+      "description": "Estimated COGS per unit in EGP at batch 30"
+    },
+    "seasonContext": {
+      "type": "string",
+      "enum": ["continuous", "ramadan", "eid-el-fitr", "eid-el-adha", "mothers-day", "back-to-school", "valentines", "new-home", "christmas-nye"],
+      "description": "Seasonal demand context. 'continuous' = year-round, no seasonal gate applies."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["scanned", "pending-verification", "principle-1-pass", "principle-3-pass", "brief-ready", "pre-sell", "pre-sell-confirmed", "in-production", "closed-won", "rejected", "market-blocked"],
+      "description": "Current pipeline stage. Maps directly to GitHub Issue labels."
+    },
+    "killSignal": {
+      "type": "string",
+      "enum": ["electronics", "injection-mold", "imported-core", "no-aha", "needs-explanation", "cultural-mismatch", "market-presence", "margin", "complexity", "behavior-weak", "season-timing", "presell-fail"],
+      "description": "If rejected: which kill signal ended the candidate (required when status = rejected)"
+    },
+    "githubIssueNumber": {
+      "type": "integer",
+      "description": "GitHub Issue number for this candidate"
+    },
+    "createdDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date candidate was first submitted (YYYY-MM-DD)"
+    },
+    "closedDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date candidate was closed (YYYY-MM-DD) — applies to closed-won and rejected"
+    }
+  },
+  "required": ["id", "name", "sourceChannel", "discoveredBy", "status"],
+  "if": {
+    "properties": { "status": { "const": "rejected" } }
+  },
+  "then": {
+    "required": ["killSignal"]
+  }
+}

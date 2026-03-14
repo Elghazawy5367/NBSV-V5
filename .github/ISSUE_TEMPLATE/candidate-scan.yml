@@ -1,0 +1,140 @@
+name: 🎯 New Candidate
+description: Submit a product candidate for NBSV filter. Structured fields feed directly into agent pipeline.
+title: "🎯 [CANDIDATE] "
+labels:
+  - candidate
+  - pending-verification
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## NBSV Candidate Intake Form
+        Fill every field. The orchestrator agent reads this form directly.
+        **Partial submissions waste agent compute.**
+
+  - type: input
+    id: product-name
+    attributes:
+      label: Product Name (internal reference)
+      description: Never share this name with the workshop. Your private reference only.
+      placeholder: e.g. Modular Iftar Serving Tray v1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source-channel
+    attributes:
+      label: Source Channel
+      description: Where did you find this candidate?
+      options:
+        - "Channel 1 — Asian Viral (Douyin / Xiaohongshu / Korean)"
+        - "Channel 2 — Concept Mine (Kickstarter / Makuake / Indiegogo)"
+        - "Channel 3 — Concept Library (Yanko / Core77 / Behance / Reddit)"
+        - "Channel 4 — AI Ideation (Claude / Qwen / ChatGPT)"
+        - "Channel 5 — GitHub Intelligence (DXF files / awesome lists)"
+    validations:
+      required: true
+
+  - type: input
+    id: channel-signal
+    attributes:
+      label: Channel Signal (virality proof)
+      description: The specific number that validates this channel's signal.
+      placeholder: "e.g. 1688 suppliers: 5 | Kickstarter backers: 1,240 | GitHub stars: 180 | Views: 2.1M"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-you-saw
+    attributes:
+      label: What You Saw — Describe It
+      description: Product, AHA reaction, materials, context. 3-6 sentences. Be precise — the filter agent reads this verbatim.
+      placeholder: |
+        Describe exactly what the product does, what it looks like, what triggered the AHA.
+        Include: materials visible in video/image, size estimate, viral context.
+        e.g. "Sectioned wooden serving board splits into 5 self-stacking trays. 2.1M views, 
+        top comment is 'in哪里买' (where to buy). 3mm MDF or bamboo-look. 
+        Perfect for iftar spread. 1688 shows 5 suppliers. No injection mold visible."
+    validations:
+      required: true
+
+  - type: textarea
+    id: egyptian-behavior
+    attributes:
+      label: Egyptian Behavior Answer
+      description: "The single most important question: What SPECIFIC Egyptian behavior does this replace or enhance? Weak answers ('people like organization') get filtered out immediately."
+      placeholder: |
+        Strong: "Replaces the flat tray system Egyptian mothers use during Ramadan iftar — 
+        multiple dishes, limited table space, guests helping themselves."
+        Weak: "Useful for serving food" → agent will reject this
+
+  - type: checkboxes
+    id: market-check
+    attributes:
+      label: Egyptian Market Pre-Check
+      description: Check only platforms you have actually searched. Unchecked = agent flags for verification.
+      options:
+        - label: "Jumia Egypt — exact product searched — CLEAN (not found)"
+        - label: "Noon Egypt — exact product searched — CLEAN (not found)"
+        - label: "Facebook Marketplace Egypt — CLEAN (not found)"
+        - label: "Instagram Egypt hashtag search — CLEAN (not found)"
+        - label: "Google Lens reverse image search — CLEAN (not found)"
+
+  - type: dropdown
+    id: production-path
+    attributes:
+      label: Likely Production Path
+      options:
+        - "Standard Workshop (complete product, COGS ≤80 EGP)"
+        - "Semi-DIY Finish (base + founder finish, COGS ≤120 EGP)"
+        - "Unknown — needs workshop consultation"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: season-context
+    attributes:
+      label: Season Context
+      options:
+        - "Continuous Demand (year-round, no seasonal gate)"
+        - "Ramadan / Eid El Fitr"
+        - "Eid El Adha"
+        - "Mother's Day (March)"
+        - "Back to School (September)"
+        - "Valentine's Day (February)"
+        - "New Home Season (Oct-Nov)"
+        - "Christmas / NYE (Dec)"
+    validations:
+      required: true
+
+  - type: input
+    id: cogs-estimate
+    attributes:
+      label: COGS Estimate (EGP per unit at batch 30)
+      placeholder: e.g. 55–70 EGP
+
+  - type: textarea
+    id: instant-kills-check
+    attributes:
+      label: Instant Kill Check (self-assessment)
+      description: Any of these = DO NOT submit, reject immediately.
+      value: |
+        Confirm NONE of these apply:
+        - [ ] Requires any electronic component (LED, battery, USB, sensor, motor)
+        - [ ] Requires injection molding
+        - [ ] Core component must be imported
+        - [ ] More than 6 precision assembly steps
+        - [ ] Needs any explanation to understand value
+        - [ ] Cultural fit relies on Chinese-specific context (Lunar New Year, rice culture)
+        - [ ] Already exists anywhere in Egyptian market in any form
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        After submission, the **Orchestrator Agent** reads this form and routes to:
+        - **AI Filter Agent** — runs 3-question filter via GitHub Models
+        - **Gap Sentinel** — posts verification links within 24h
+        - **Brief Forge** — auto-generates workshop spec on `principle-3-pass` label

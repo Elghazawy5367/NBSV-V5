@@ -1,0 +1,99 @@
+name: ◻ Log Rejection
+description: Record a rejected candidate. Every rejection builds the pattern library fed to Pattern Brain monthly.
+title: "◻ [REJECTED] "
+labels:
+  - rejected
+  - pattern-data
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Rejection Record
+        Logging rejections is not failure — it is the system learning.
+        Pattern Brain reads every entry. After 20+, it identifies what you should stop scanning for.
+
+  - type: input
+    id: product-name
+    attributes:
+      label: Product (5 words max)
+      placeholder: e.g. LED acrylic desk organizer
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source-channel
+    attributes:
+      label: Source Channel
+      options:
+        - "Channel 1 — Asian Viral"
+        - "Channel 2 — Concept Mine"
+        - "Channel 3 — Concept Library"
+        - "Channel 4 — AI Ideation"
+        - "Channel 5 — GitHub Intelligence"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kill-signal
+    attributes:
+      label: Primary Kill Signal
+      description: The FIRST reason it failed. One signal only.
+      options:
+        - "fail-electronics — Contains any electronic component"
+        - "fail-injection-mold — Requires injection molding"
+        - "fail-imported-component — Core component must be imported"
+        - "fail-no-aha — No AHA in 3 seconds without explanation"
+        - "fail-needs-explanation — Requires explanation to understand value"
+        - "fail-intellectual-aha — Clever but no visceral desire ('interesting' not 'I want it')"
+        - "fail-assembly-complex — More than 6 precision assembly steps"
+        - "fail-cogs-high — COGS ceiling broken even at batch 30"
+        - "fail-no-egyptian-fit — Cannot name a specific Egyptian behavior it serves"
+        - "fail-chinese-context — Cultural fit is China-specific (Lunar New Year, rice culture)"
+        - "on-jumia — Found on Jumia Egypt"
+        - "on-noon — Found on Noon Egypt"
+        - "on-facebook — Found on Facebook Marketplace Egypt"
+        - "on-instagram — Found on Instagram Egypt"
+        - "in-shops — Already in Egyptian physical shops"
+        - "presell-fail — Fewer than 2 shop owners confirmed deposit"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: which-question
+    attributes:
+      label: Killed at Which Filter Question?
+      options:
+        - "Q1 — Never Before Seen (market check failed)"
+        - "Q2 — AHA in 3 seconds (no involuntary reaction / no Egyptian behavior)"
+        - "Q3 — Workshop producible at margin (materials / cost / complexity)"
+        - "Pre-sell — Failed shop deposit confirmation"
+        - "Did not reach filter — instant kill signal identified first"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-promising
+    attributes:
+      label: Why It Seemed Promising (before it failed)
+      description: This is the most important field for pattern detection. What made you spend time on it?
+      placeholder: |
+        e.g. "1.8M views on Douyin, strong comment engagement. 
+        Assumed it would pass market check. Found exact product on Jumia shipped from China, 
+        price point 340 EGP — import reference exists."
+    validations:
+      required: true
+
+  - type: input
+    id: time-spent
+    attributes:
+      label: Time Spent Before Rejection (minutes)
+      placeholder: e.g. 8
+      description: Helps measure filter application speed. Goal is <5 min per rejection.
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **Pattern Brain** reads all rejections on the 1st of each month, calls GitHub Models AI, 
+        and posts an intelligence brief identifying dominant kill signals and scan adjustments.

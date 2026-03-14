@@ -1,0 +1,145 @@
+name: 📅 Season Pulse — Weekly Demand Window Intelligence
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'   # Every Monday 08:00 UTC = 10:00 Egypt
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: write
+  models: read
+
+jobs:
+  season-intelligence:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Calculate Egyptian season windows and update pipeline
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date();
+            const year = today.getFullYear();
+
+            // Egypt's 8 demand windows — update Islamic dates yearly
+            const seasons = [
+              { name: "Valentine's Day", date: new Date(year, 1, 14), emoji: '💝', type: 'amplified' },
+              { name: "Mother's Day", date: new Date(year, 2, 21), emoji: '🌸', type: 'amplified' },
+              { name: "Ramadan", date: new Date(2026, 2, 1), emoji: '🌙', type: 'peak' },
+              { name: "Eid El Fitr", date: new Date(2026, 2, 30), emoji: '🌙', type: 'peak' },
+              { name: "Eid El Adha", date: new Date(2026, 5, 6), emoji: '🐑', type: 'peak' },
+              { name: "Back to School", date: new Date(year, 8, 10), emoji: '📚', type: 'amplified' },
+              { name: "New Home Season", date: new Date(year, 9, 15), emoji: '🏠', type: 'amplified' },
+              { name: "Christmas/NYE", date: new Date(year, 11, 25), emoji: '🎄', type: 'amplified' },
+            ];
+
+            const upcoming = seasons
+              .map(s => {
+                let d = new Date(s.date);
+                if (d < today) d.setFullYear(d.getFullYear() + 1);
+                const days = Math.ceil((d - today) / 86400000);
+                return { ...s, days, dateStr: d.toLocaleDateString('en-GB') };
+              })
+              .filter(s => s.days > 0)
+              .sort((a, b) => a.days - b.days);
+
+            const next = upcoming[0];
+            const within42 = upcoming.filter(s => s.days <= 42);
+            const within14 = upcoming.filter(s => s.days <= 14);
+
+            // Build the season briefing
+            const table = upcoming.slice(0, 8).map(s => {
+              const status = s.days <= 14 ? '🚨 ACT NOW' : s.days <= 42 ? '✅ PROCEED' : s.days <= 56 ? '⚡ PLAN' : '⏳ HOLD';
+              const window = s.days <= 2 ? 'ABORT' : s.days <= 14 ? '🔴 OPTIMAL' : s.days <= 42 ? '🟡 ACCEPTABLE' : '⚪ PREMATURE';
+              return `| ${s.emoji} ${s.name} | ${s.dateStr} | **${s.days}** days | ${window} | ${status} |`;
+            }).join('\n');
+
+            const briefingBody = `## ${next.emoji} Season Pulse — Week of ${today.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}
+
+### Next Season: **${next.name}** — ${next.days} days away
+
+${within14.length > 0 ? `> 🚨 **URGENT:** ${within14.map(s => s.name).join(', ')} within 14 days. Season-amplified candidates must be in pre-sell TODAY or abort this window.` : ''}
+${within42.length > 0 ? `> ✅ **PROCEED WINDOW OPEN:** ${within42.map(s => s.emoji + ' ' + s.name).join(', ')}` : ''}
+
+### Full Season Calendar
+
+| Season | Date | Days Away | Window Status | Action |
+|---|---|---|---|---|
+${table}
+
+### Pipeline Status for Season-Amplified Products
+`;
+
+            // Check for season-amplified candidates and their urgency
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'season-amplified',
+              state: 'open',
+              per_page: 50,
+            });
+
+            let pipelineStatus = '';
+            if (issues.length === 0) {
+              pipelineStatus = '*No season-amplified candidates in pipeline.*\n\n';
+              if (within42.length > 0) {
+                pipelineStatus += `⚠ **${within42.map(s => s.name).join(', ')} is within 42 days and you have no season-amplified candidates.** Consider starting a scan session focused on ${within42[0].name} products.`;
+              }
+            } else {
+              pipelineStatus = issues.map(i => {
+                const labels = i.labels.map(l => l.name);
+                const stage = labels.includes('in-production') ? '🏭 Production' :
+                              labels.includes('pre-sell-confirmed') ? '📞 Pre-Sell Confirmed' :
+                              labels.includes('principle-3-pass') ? '✅ Filter Pass' :
+                              labels.includes('principle-1-pass') ? '🔍 Market Verified' : '🔍 Scanning';
+                return `- Issue #${i.number}: **${i.title}** — ${stage}`;
+              }).join('\n');
+            }
+
+            const fullBody = briefingBody + pipelineStatus + `\n\n---\n*Season Pulse Agent — Runs every Monday — NBSV v4.0*\n*Continuous demand products (storage, gifting, car, desk, education) are NOT affected by this calendar.*`;
+
+            // Create or update the weekly season briefing issue
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'season-briefing',
+              state: 'open',
+              per_page: 1,
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                title: `📅 Season Pulse — ${next.emoji} ${next.name} in ${next.days} days`,
+                body: fullBody,
+              });
+              console.log(`Updated Season Pulse issue #${existing[0].number}`);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `📅 Season Pulse — ${next.emoji} ${next.name} in ${next.days} days`,
+                body: fullBody,
+                labels: ['season-briefing'],
+              });
+              console.log('Created new Season Pulse issue');
+            }
+
+            // Auto-label urgent season-amplified candidates
+            if (within14.length > 0) {
+              for (const issue of issues) {
+                const labels = issue.labels.map(l => l.name);
+                if (!labels.includes('urgent')) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['urgent'],
+                  });
+                  console.log(`🚨 Auto-labeled Issue #${issue.number} as URGENT`);
+                }
+              }
+            }

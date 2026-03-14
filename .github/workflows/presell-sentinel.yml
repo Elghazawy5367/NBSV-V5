@@ -1,0 +1,151 @@
+name: 💰 Presell Sentinel — Deposit Pipeline Tracker
+
+on:
+  schedule:
+    - cron: '0 8 * * 3,6'   # Wednesday + Saturday 08:00 UTC = 10:00 Egypt
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+
+  # ── Job 1: Track stalled pre-sell issues ──────────────────────────────────
+  track-presell-pipeline:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Check pre-sell stage health
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'brief-ready',
+              state: 'open',
+              per_page: 50,
+            });
+
+            const today = new Date();
+
+            for (const issue of issues) {
+              const labels = issue.labels.map(l => l.name);
+              const isConfirmed = labels.includes('pre-sell-confirmed');
+              const isUrgent = labels.includes('urgent');
+
+              // Get comments to check for deposit confirmation
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 50,
+              });
+
+              const depositMentioned = comments.some(c =>
+                c.body.toLowerCase().includes('deposit') ||
+                c.body.toLowerCase().includes('confirmed') ||
+                c.body.toLowerCase().includes('paid')
+              );
+
+              // Calculate days since brief was ready
+              const briefComment = comments.find(c => c.body.includes('Brief Forge'));
+              const daysSinceBrief = briefComment
+                ? Math.floor((today - new Date(briefComment.created_at)) / 86400000)
+                : 0;
+
+              if (!isConfirmed) {
+                let nudgeLevel = '';
+                let nudgeBody = '';
+
+                if (daysSinceBrief >= 7 && !isUrgent) {
+                  nudgeLevel = 'REMINDER';
+                  nudgeBody = `## 💰 Presell Sentinel — Nudge (Day ${daysSinceBrief})
+
+This candidate has been brief-ready for **${daysSinceBrief} days** with no deposit confirmation logged.
+
+**Pre-sell rule:** Production cannot start until 2 shop owners confirm with 50% deposit.
+
+### Shop Visit Checklist
+- [ ] Visit Shop 1 — show video — record response as comment here
+- [ ] Visit Shop 2 — show video — record response as comment here  
+- [ ] Visit Shop 3 (backup) — show video
+
+**If 2 shops confirm:** Add label \`pre-sell-confirmed\` to this issue.
+**If fewer than 2 confirm after 3 visits:** Add label \`presell-fail\` and close issue. Log in failure log.
+
+**Script (say exactly this):**
+> *"This has [X] million views. Nobody in Egypt has seen it yet. I can make it here. Do you want to be the first shop in [area] to carry it?"*
+
+---
+*Presell Sentinel — NBSV Rule #1: Never produce without 2 deposits*`;
+
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: nudgeBody,
+                  });
+
+                  console.log(`📞 Nudge posted on Issue #${issue.number} (Day ${daysSinceBrief})`);
+                }
+
+                if (daysSinceBrief >= 14) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['presell-stalled'],
+                  });
+                  console.log(`⚠ Issue #${issue.number} labeled presell-stalled at day ${daysSinceBrief}`);
+                }
+              }
+            }
+
+  # ── Job 2: Celebrate confirmed pre-sells ──────────────────────────────────
+  confirm-deposit-pipeline:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.label.name == 'pre-sell-confirmed'
+    steps:
+      - name: Post production activation message
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+            const isSemiDiy = labels.includes('semi-diy');
+
+            const activationMessage = `## ✅ Production Activated — Pre-Sell Confirmed
+
+2+ shop deposits confirmed. **NBSV Rule #1 satisfied.** Production may now begin.
+
+### Production Checklist
+- [ ] Collect shop deposits (minimum 50% per shop)
+- [ ] Shop deposits transferred to workshop as deposit — personal capital used: **zero**
+- [ ] Workshop brief sent (see above comment from Brief Forge)
+- [ ] Workshop confirmed timeline and price
+${isSemiDiy ? '- [ ] Finishing station ready (sandpaper, stain, felt, hardware)\n- [ ] Base structure inspection via WhatsApp (first 3 units) before finishing' : ''}
+- [ ] **QC checkpoint:** WhatsApp photo of first 3 units before approving full batch
+- [ ] Batch approved → full production proceeds
+- [ ] Delivery day: place on counter, say nothing, watch
+- [ ] Reveal video posted same day as delivery
+
+### Labels to Add as Product Progresses
+- When workshop starts: \`in-production\`
+- When QC approved: remove \`in-production\`, add \`distributed\`
+- When cycle complete: \`closed-won\`
+
+---
+*Presell Sentinel — Production pathway activated — NBSV v4.0*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: activationMessage,
+            });
+
+            console.log(`✅ Production activation message posted on Issue #${issue.number}`);

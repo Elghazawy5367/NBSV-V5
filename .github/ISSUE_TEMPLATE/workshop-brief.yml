@@ -1,0 +1,135 @@
+name: ⚙️ Workshop Brief Request
+description: Trigger Brief Forge agent to generate a WhatsApp workshop spec. Only submit after 2+ shop deposits confirmed.
+title: "⚙️ [BRIEF] "
+labels:
+  - brief-request
+  - pre-sell-confirmed
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Workshop Brief Request
+        **RULE: Do not submit this form until 2+ shop owners have confirmed with deposit.**
+        Shop deposits fund workshop deposits. Zero personal capital.
+        Brief Forge agent reads this form and generates the WhatsApp message automatically.
+
+  - type: checkboxes
+    id: presell-confirmation
+    attributes:
+      label: Pre-Sell Confirmation (Rule #1)
+      description: Both must be checked before submitting.
+      options:
+        - label: "Shop 1 has confirmed interest and paid 50% deposit"
+          required: true
+        - label: "Shop 2 has confirmed interest and paid 50% deposit"
+          required: true
+
+  - type: input
+    id: candidate-issue
+    attributes:
+      label: Candidate Issue Number
+      placeholder: e.g. #23
+      description: Link to the original candidate issue for context.
+    validations:
+      required: true
+
+  - type: input
+    id: job-description
+    attributes:
+      label: One-Sentence Job Description for Workshop
+      description: Plain description of the physical object. No context about what you're selling or where.
+      placeholder: 'e.g. "Make me a slotted MDF serving tray, 40x25cm, with 5 removable acrylic dividers in 4 sizes"'
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: materials
+    attributes:
+      label: Materials Required
+      options:
+        - label: "3mm MDF"
+        - label: "6mm MDF"
+        - label: "12mm MDF / plywood"
+        - label: "2mm clear acrylic"
+        - label: "3mm colored acrylic"
+        - label: "Aluminum sheet"
+        - label: "Fabric / canvas"
+        - label: "Foam / EVA sheet"
+        - label: "Standard hardware (screws, hinges, magnets)"
+
+  - type: input
+    id: dimensions
+    attributes:
+      label: Approximate Dimensions
+      placeholder: e.g. 40cm × 25cm × 5cm
+    validations:
+      required: true
+
+  - type: input
+    id: batch-size
+    attributes:
+      label: Batch Size
+      placeholder: "30"
+      value: "30"
+    validations:
+      required: true
+
+  - type: input
+    id: target-cogs
+    attributes:
+      label: Target COGS per Unit (EGP)
+      placeholder: e.g. 75
+    validations:
+      required: true
+
+  - type: input
+    id: deadline-days
+    attributes:
+      label: Deadline (Days from Confirmation)
+      placeholder: e.g. 7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: production-path
+    attributes:
+      label: Production Path
+      options:
+        - "Standard — Workshop delivers complete product"
+        - "Semi-DIY — Workshop delivers base structure only (founder adds finish)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: assembly-steps
+    attributes:
+      label: Assembly Steps (max 6, one per line)
+      placeholder: |
+        Cut MDF to dimension
+        Cut acrylic dividers to fit
+        Deburr all edges
+        Dry-fit test — dividers slide in/out
+        Sand surfaces smooth
+        Package in plain box
+    validations:
+      required: true
+
+  - type: dropdown
+    id: qc-checkpoint
+    attributes:
+      label: QC Checkpoint Agreement
+      description: Non-negotiable. Rule #5.
+      options:
+        - "✓ I will request WhatsApp photo of first 3 units before approving full batch"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **Brief Forge** reads this form and generates a complete WhatsApp-ready workshop message 
+        within 2 minutes of submission. Check the issue comments.
+        
+        **Never include** product name, customer name, shop name, or selling location in workshop communications.

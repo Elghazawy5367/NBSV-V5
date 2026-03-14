@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NBSV Command Intelligence v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--void:#050509;--base:#0A0A12;--card:#101018;--el:#171724;--input:#0D0D16;
+--b1:#1A1A28;--b2:#24243A;--b3:#32324E;
+--gold:#BF7A0A;--gold2:#E8A020;--gold3:#F5BC50;--gbg:rgba(191,122,10,.08);
+--ember:#C94A15;--green:#12A666;--blue:#2B65D4;--red:#BF2B2B;--violet:#6B32C8;--cyan:#0891B2;
+--t1:#E8E2D8;--t2:#6A6A80;--t3:#2E2E44;
+--f:'DM Sans',sans-serif;--m:'JetBrains Mono',monospace;--d:'Syne',sans-serif;
+--r:7px;--rl:12px;--tr:160ms cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:13px;}
+body{background:var(--void);color:var(--t1);font-family:var(--f);min-height:100vh;display:flex;overflow-x:hidden;}
+a{color:inherit;text-decoration:none;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:var(--base);}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+
+/* SIDEBAR */
+#sb{width:196px;min-height:100vh;background:var(--base);border-right:1px solid var(--b1);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:width var(--tr);overflow:hidden;}
+#sb.col{width:50px;}
+.sbh{padding:15px 12px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:9px;min-height:54px;flex-shrink:0;}
+.logo{width:27px;height:27px;background:var(--gold);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--d);font-weight:800;font-size:12px;color:var(--void);}
+.lt{overflow:hidden;white-space:nowrap;}
+.lt strong{font-family:var(--d);font-size:11px;font-weight:700;display:block;line-height:1.2;}
+.lt span{font-size:9px;font-family:var(--m);color:var(--t3);letter-spacing:.04em;}
+.sbn{flex:1;padding:7px 5px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:var(--r);cursor:pointer;color:var(--t2);font-size:11.5px;font-weight:500;white-space:nowrap;transition:all var(--tr);position:relative;}
+.ni:hover{background:var(--el);color:var(--t1);}
+.ni.on{background:var(--gbg);color:var(--gold2);}
+.ni.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:var(--gold);border-radius:0 2px 2px 0;}
+.ni .ic{font-size:14px;flex-shrink:0;width:16px;text-align:center;}
+.ni .lb{overflow:hidden;flex:1;}
+.nb{margin-left:auto;background:var(--gold);color:var(--void);font-size:9px;font-weight:700;font-family:var(--m);padding:1px 5px;border-radius:8px;flex-shrink:0;}
+.nb.r{background:var(--red);}
+.ss{padding:2px 9px 3px;font-size:9px;font-family:var(--m);color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-top:7px;}
+.sbf{padding:7px 5px;border-top:1px solid var(--b1);}
+
+/* MAIN */
+#main{margin-left:196px;flex:1;min-height:100vh;transition:margin-left var(--tr);}
+#sb.col~#main{margin-left:50px;}
+
+/* TOPBAR */
+#topbar{background:var(--base);border-bottom:1px solid var(--b1);padding:0 18px;height:48px;display:flex;align-items:center;gap:11px;position:sticky;top:0;z-index:50;}
+.ts{display:flex;align-items:center;gap:5px;font-family:var(--m);font-size:10px;}
+.ts .l{color:var(--t3);}
+.ts .v{color:var(--t1);font-weight:500;}
+.ts .v.g{color:var(--gold2);}
+.ts .v.gr{color:var(--green);}
+.tsep{width:1px;height:14px;background:var(--b1);}
+.pd{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:7px;}
+.ghp{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:16px;font-size:10px;font-family:var(--m);border:1px solid;cursor:pointer;transition:all var(--tr);}
+.ghp.live{border-color:rgba(18,166,102,.3);color:var(--green);background:rgba(18,166,102,.04);}
+.ghp.off{border-color:var(--b2);color:var(--t3);}
+
+/* PAGES */
+.pg{display:none;padding:18px;animation:fi 160ms ease;}
+.pg.on{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(3px);}to{opacity:1;}}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.pt{font-family:var(--d);font-size:18px;font-weight:700;line-height:1.2;}
+.ps{font-size:9px;color:var(--t3);font-family:var(--m);margin-top:2px;letter-spacing:.05em;}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:var(--rl);padding:15px;}
+.card:hover{border-color:var(--b2);}
+.ct{font-family:var(--d);font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.09em;margin-bottom:11px;}
+
+/* STAT CARDS */
+.sc{background:var(--card);border:1px solid var(--b1);border-radius:var(--rl);padding:15px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;}
+.sc.g::after{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sc.gr::after{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.sc.r::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.sc.b::after{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.sc.v::after{background:linear-gradient(90deg,transparent,var(--violet),transparent);}
+.sn{font-family:var(--d);font-size:28px;font-weight:800;line-height:1;margin-bottom:3px;}
+.sn.g{color:var(--gold2);}
+.sn.gr{color:var(--green);}
+.sn.b{color:var(--blue);}
+.sl{font-size:9px;font-family:var(--m);color:var(--t3);text-transform:uppercase;letter-spacing:.07em;}
+.sm{font-size:9px;font-family:var(--m);color:var(--t2);margin-top:4px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:var(--r);font-family:var(--f);font-size:11.5px;font-weight:500;cursor:pointer;transition:all var(--tr);border:none;white-space:nowrap;}
+.bg{background:var(--gold);color:var(--void);}
+.bg:hover{background:var(--gold2);}
+.bo{background:transparent;border:1px solid var(--b2);color:var(--t2);}
+.bo:hover{border-color:var(--gold);color:var(--gold2);}
+.bgh{background:rgba(18,166,102,.08);border:1px solid rgba(18,166,102,.2);color:var(--green);}
+.bgh:hover{background:rgba(18,166,102,.14);}
+.bag{background:rgba(43,101,212,.08);border:1px solid rgba(43,101,212,.2);color:#5B8FF0;}
+.bag:hover{background:rgba(43,101,212,.14);}
+.br{background:rgba(191,43,43,.08);border:1px solid rgba(191,43,43,.25);color:var(--red);}
+.br:hover{background:rgba(191,43,43,.14);}
+.bsm{padding:5px 10px;font-size:10.5px;}
+.bxs{padding:3px 7px;font-size:9.5px;}
+
+/* FORMS */
+.fg{margin-bottom:11px;}
+.fl{display:block;font-size:9px;font-family:var(--m);color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+input,textarea,select{width:100%;background:var(--input);border:1px solid var(--b1);border-radius:var(--r);padding:8px 11px;font-family:var(--f);font-size:11.5px;color:var(--t1);transition:border-color var(--tr);outline:none;appearance:none;}
+input:focus,textarea:focus,select:focus{border-color:rgba(191,122,10,.4);}
+textarea{resize:vertical;min-height:66px;line-height:1.5;}
+select option{background:var(--card);}
+input[type=range]{height:3px;background:var(--b2);padding:0;border:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--gold);}
+.fh{font-size:9px;color:var(--t3);margin-top:3px;font-family:var(--m);}
+
+/* RADIO PILLS */
+.rg{display:flex;gap:5px;flex-wrap:wrap;}
+.rp{padding:5px 11px;border-radius:14px;border:1px solid var(--b2);font-size:10.5px;cursor:pointer;color:var(--t2);transition:all var(--tr);}
+.rp:hover{border-color:rgba(191,122,10,.4);color:var(--t1);}
+.rp.on{background:var(--gbg);border-color:var(--gold);color:var(--gold2);}
+
+/* KANBAN */
+.kb{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;align-items:flex-start;}
+.kc{min-width:170px;max-width:195px;flex-shrink:0;background:var(--card);border:1px solid var(--b1);border-radius:var(--rl);display:flex;flex-direction:column;}
+.kh{padding:8px 10px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--el);border-radius:var(--rl) var(--rl) 0 0;}
+.kht{font-size:9px;font-family:var(--m);color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.kcount{font-size:9px;font-family:var(--m);color:var(--t3);padding:2px 5px;border-radius:6px;border:1px solid var(--b1);}
+.kcds{padding:7px;flex:1;display:flex;flex-direction:column;gap:5px;}
+.kcard{background:var(--el);border:1px solid var(--b1);border-radius:var(--r);padding:9px;cursor:pointer;transition:all var(--tr);}
+.kcard:hover{border-color:rgba(191,122,10,.3);transform:translateY(-1px);}
+.kcard.live{border-left:2px solid var(--green);}
+.kcard.urg{border-top:1px solid var(--red);}
+.kn{font-size:10.5px;font-weight:600;color:var(--t1);margin-bottom:4px;line-height:1.3;}
+.tags{display:flex;gap:3px;flex-wrap:wrap;}
+.tag{font-size:8.5px;font-family:var(--m);padding:1px 5px;border-radius:3px;font-weight:500;}
+.tc{background:rgba(43,101,212,.1);color:#7AA0F0;}
+.td{background:rgba(191,122,10,.1);color:var(--gold2);}
+.tu{background:rgba(191,43,43,.1);color:var(--red);}
+.tl{background:rgba(18,166,102,.1);color:var(--green);}
+.kempty{text-align:center;padding:14px;color:var(--t3);font-size:9px;font-family:var(--m);}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse;}
+.dt th{font-size:9px;font-family:var(--m);color:var(--t3);text-transform:uppercase;letter-spacing:.07em;padding:8px 10px;text-align:left;border-bottom:1px solid var(--b1);font-weight:600;white-space:nowrap;}
+.dt td{padding:9px 10px;border-bottom:1px solid var(--b1);font-size:11.5px;color:var(--t2);vertical-align:top;}
+.dt tr:hover td{background:var(--el);}
+.dt td:first-child{color:var(--t1);font-weight:500;}
+
+/* CHIPS */
+.chip{display:inline-flex;padding:2px 6px;border-radius:3px;font-size:8.5px;font-family:var(--m);font-weight:600;text-transform:uppercase;}
+.cp{background:rgba(18,166,102,.1);color:var(--green);}
+.cf{background:rgba(191,43,43,.1);color:var(--red);}
+.cn{background:rgba(191,122,10,.1);color:var(--gold2);}
+.cl{background:rgba(14,145,178,.1);color:var(--cyan);}
+
+/* AGENT CARDS */
+.ag{background:var(--el);border:1px solid var(--b1);border-radius:var(--rl);padding:12px;display:flex;gap:10px;transition:border-color var(--tr);}
+.ag:hover{border-color:var(--b2);}
+.ag-ic{font-size:19px;flex-shrink:0;margin-top:1px;}
+.ag-nm{font-size:11.5px;font-weight:600;color:var(--t1);margin-bottom:2px;}
+.ag-dc{font-size:9.5px;font-family:var(--m);color:var(--t3);line-height:1.5;}
+.ag-mt{margin-top:5px;display:flex;align-items:center;gap:6px;}
+.adot{width:4px;height:4px;border-radius:50%;}
+.adot.live{background:var(--green);}
+.adot.off{background:var(--t3);}
+.adot.amber{background:var(--gold);}
+.ast{font-size:9.5px;font-family:var(--m);}
+.ag-acts{margin-left:auto;display:flex;gap:4px;flex-shrink:0;align-items:flex-start;padding-top:1px;}
+
+/* VERDICT */
+.vbox{border-radius:var(--rl);padding:15px;border:1px solid;display:none;}
+.vbox.pass{background:rgba(18,166,102,.04);border-color:rgba(18,166,102,.2);}
+.vbox.fail{background:rgba(191,43,43,.04);border-color:rgba(191,43,43,.2);}
+.vbox.inv{background:rgba(191,122,10,.04);border-color:rgba(191,122,10,.2);}
+.vbadge{font-family:var(--d);font-size:14px;font-weight:800;letter-spacing:.04em;}
+.vbadge.pass{color:var(--green);}
+.vbadge.fail{color:var(--red);}
+.vbadge.inv{color:var(--gold2);}
+.vbody{font-size:11px;color:var(--t2);line-height:1.65;font-family:var(--m);white-space:pre-wrap;margin-top:8px;}
+
+/* SEASON CARDS */
+.scard{background:var(--card);border:1px solid var(--b1);border-radius:var(--rl);padding:12px;text-align:center;cursor:pointer;transition:all var(--tr);}
+.scard.up{border-color:rgba(191,122,10,.22);}
+.scard.imm{border-color:rgba(191,43,43,.4);animation:bp 2s infinite;}
+.scard.past{opacity:.3;}
+@keyframes bp{0%,100%{border-color:rgba(191,43,43,.3);}50%{border-color:rgba(191,43,43,.7);}}
+
+/* KILL BARS */
+.kbar{display:flex;align-items:center;gap:9px;padding:6px 10px;background:var(--el);border-radius:var(--r);border:1px solid var(--b1);}
+.kbl{font-size:10px;font-family:var(--m);color:var(--t2);width:170px;flex-shrink:0;}
+.kbw{flex:1;height:4px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.kbf{height:100%;border-radius:2px;background:var(--red);}
+.kbn{font-family:var(--m);font-size:10px;font-weight:600;width:20px;text-align:right;flex-shrink:0;}
+
+/* ECON */
+.ep{background:var(--el);border:1px solid var(--b1);border-radius:var(--rl);padding:13px;}
+.ep.a{border-color:rgba(191,122,10,.18);}
+.er{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b1);font-size:11.5px;}
+.er:last-child{border:none;}
+.er .el{color:var(--t2);}
+.er .ev{font-family:var(--m);font-weight:600;color:var(--t1);}
+.er.tot .el{font-weight:600;color:var(--t1);}
+.er.tot .ev{color:var(--gold2);font-size:13px;}
+.esl{margin-bottom:9px;}
+.esll{display:flex;justify-content:space-between;font-size:10px;color:var(--t2);margin-bottom:3px;font-family:var(--m);}
+
+/* NOTICE */
+.notice{background:rgba(191,122,10,.05);border:1px solid rgba(191,122,10,.15);border-radius:var(--r);padding:9px 12px;font-size:10px;font-family:var(--m);color:var(--t2);line-height:1.5;}
+.notice strong{color:var(--gold2);}
+.notice.gr{background:rgba(18,166,102,.05);border-color:rgba(18,166,102,.15);}
+.notice.r{background:rgba(191,43,43,.05);border-color:rgba(191,43,43,.15);}
+
+/* INTEL ROWS */
+.irow{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--el);border:1px solid var(--b1);border-radius:var(--r);transition:border-color var(--tr);}
+.irow:hover{border-color:var(--b2);}
+.irow-nm{font-size:11px;font-weight:600;color:var(--t1);font-family:var(--m);flex:1;}
+.irow-dc{font-size:9.5px;color:var(--t3);margin-top:1px;}
+
+/* THINKING */
+.think{display:none;align-items:center;gap:5px;padding:9px;font-size:10px;font-family:var(--m);color:var(--gold);}
+.think.on{display:flex;}
+.td3{width:3px;height:3px;border-radius:50%;background:var(--gold);animation:tp 1.2s infinite;}
+.td3:nth-child(2){animation-delay:.2s;}
+.td3:nth-child(3){animation-delay:.4s;}
+@keyframes tp{0%,80%,100%{transform:scale(0);opacity:.3;}40%{transform:scale(1);opacity:1;}}
+
+/* LIVE BAR */
+.lbar{display:flex;align-items:center;gap:7px;padding:5px 10px;background:rgba(18,166,102,.04);border:1px solid rgba(18,166,102,.12);border-radius:var(--r);font-size:9.5px;font-family:var(--m);color:var(--green);margin-bottom:12px;}
+
+/* ACTIONS FEED */
+.afd{display:flex;flex-direction:column;gap:4px;}
+.afi{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--el);border:1px solid var(--b1);border-radius:var(--r);font-size:10px;}
+.afst{font-size:8px;padding:2px 6px;border-radius:3px;font-family:var(--m);font-weight:600;flex-shrink:0;}
+.afok{background:rgba(18,166,102,.1);color:var(--green);}
+.afrun{background:rgba(191,122,10,.1);color:var(--gold2);}
+.affail{background:rgba(191,43,43,.1);color:var(--red);}
+.afnm{font-weight:500;color:var(--t1);flex:1;}
+.aftm{font-family:var(--m);color:var(--t3);font-size:9px;}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.mo.on{display:flex;}
+.modal{background:var(--card);border:1px solid var(--b2);border-radius:var(--rl);width:min(550px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.7);animation:mi 160ms ease;}
+@keyframes mi{from{opacity:0;transform:scale(.97) translateY(6px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.mh{padding:15px 19px 12px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
+.mt{font-family:var(--d);font-size:14px;font-weight:700;}
+.mx{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:3px;border-radius:4px;}
+.mx:hover{color:var(--t1);background:var(--el);}
+.mb{padding:17px 19px;}
+.mf{padding:12px 19px;border-top:1px solid var(--b1);display:flex;justify-content:flex-end;gap:6px;}
+.div{height:1px;background:var(--b1);margin:12px 0;}
+.empty{text-align:center;padding:28px;color:var(--t3);}
+.ei{font-size:26px;margin-bottom:8px;opacity:.25;}
+.et{font-size:10.5px;font-family:var(--m);}
+
+@media(max-width:1100px){.g4{grid-template-columns:1fr 1fr;}.g5{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:800px){#sb{width:50px;}.lt,.ni .lb,.ss,.nb{display:none;}#main{margin-left:50px;}.g2{grid-template-columns:1fr;}.g3{grid-template-columns:1fr;}.pg{padding:12px;}}
+@media(max-width:600px){.g4,.g5{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<nav id="sb">
+  <div class="sbh">
+    <div class="logo">N</div>
+    <div class="lt"><strong>NBSV ENGINE</strong><span>v4 · MARCH 2026</span></div>
+  </div>
+  <div class="sbn">
+    <div class="ss">Intelligence</div>
+    <div class="ni on" data-p="overview"><span class="ic">◈</span><span class="lb">Overview</span></div>
+    <div class="ni" data-p="agents"><span class="ic">⟳</span><span class="lb">Agent Console</span><span class="nb">9</span></div>
+    <div class="ni" data-p="pipeline"><span class="ic">⬡</span><span class="lb">Pipeline</span><span class="nb" id="b-pipe">0</span></div>
+    <div class="ss">Operations</div>
+    <div class="ni" data-p="ai-filter"><span class="ic">◎</span><span class="lb">AI Filter</span></div>
+    <div class="ni" data-p="candidates"><span class="ic">▣</span><span class="lb">Candidates</span></div>
+    <div class="ni" data-p="workshop"><span class="ic">◧</span><span class="lb">Workshop Brief</span></div>
+    <div class="ni" data-p="economics"><span class="ic">◐</span><span class="lb">Economics</span></div>
+    <div class="ss">Analysis</div>
+    <div class="ni" data-p="seasons"><span class="ic">◑</span><span class="lb">Seasons</span></div>
+    <div class="ni" data-p="failures"><span class="ic">◻</span><span class="lb">Failures</span><span class="nb r" id="b-fail">0</span></div>
+    <div class="ni" data-p="intel"><span class="ic">⬢</span><span class="lb">Intel Layer</span></div>
+    <div class="ss">System</div>
+    <div class="ni" data-p="settings"><span class="ic">◉</span><span class="lb">Settings</span></div>
+  </div>
+  <div class="sbf">
+    <div class="ni" onclick="document.getElementById('sb').classList.toggle('col')"><span class="ic">◁</span><span class="lb">Collapse</span></div>
+  </div>
+</nav>
+
+<main id="main">
+
+<div id="topbar">
+  <div class="pd"></div>
+  <div class="ts"><span class="l">DATE</span>&nbsp;<span class="v" id="tb-date">—</span></div>
+  <div class="tsep"></div>
+  <div class="ts"><span class="l">ACTIVE</span>&nbsp;<span class="v g" id="tb-active">—</span></div>
+  <div class="ts"><span class="l">PASSES</span>&nbsp;<span class="v gr" id="tb-passes">—</span></div>
+  <div class="ts"><span class="l">SEASON</span>&nbsp;<span class="v" id="tb-season">—</span></div>
+  <div class="tbr">
+    <div class="ghp off" id="ghpill" onclick="nav('settings')">
+      <span id="ghpdot" style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span>
+      <span id="ghptxt">Connect GitHub</span>
+    </div>
+    <button class="btn bg bsm" onclick="openMo('nc')">+ Candidate</button>
+    <button class="btn bo bsm" id="sync-btn" onclick="syncGH()">⟳ Sync</button>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section class="pg on" id="pg-overview">
+  <div class="ph"><div><div class="pt">Command Overview</div><div class="ps">NBSV LIVE INTELLIGENCE · GITHUB ISSUES + LOCAL</div></div></div>
+  <div id="live-bar" class="lbar" style="display:none">⬤ GitHub Live — <span id="live-ct">0</span> issues synced from your repo</div>
+  <div class="g5" style="margin-bottom:12px" id="ov-stats"></div>
+  <div class="g2" style="margin-bottom:11px">
+    <div class="card"><div class="ct">Pipeline Flow</div><div id="ov-pipe"></div></div>
+    <div class="card"><div class="ct">Next Season</div><div id="ov-season"></div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">Kill Signal Frequency</div><div id="ov-kills"></div></div>
+    <div class="card"><div class="ct">Quick Actions</div><div id="ov-qa"></div></div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section class="pg" id="pg-agents">
+  <div class="ph">
+    <div><div class="pt">Agent Console</div><div class="ps">9 AUTONOMOUS AGENTS · 3 SCOUTS PROACTIVE · GITHUB MODELS MULTI-MODEL · FREE</div></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn bag bsm" onclick="triggerAll()">⟳ Trigger All</button>
+      <a href="#" id="gh-acts-link" target="_blank" class="btn bgh bsm">GitHub Actions →</a>
+    </div>
+  </div>
+  <div class="notice gr" style="margin-bottom:12px">
+    <strong>v5.0 ARCHITECTURE:</strong> Scout agents run proactively on schedule — they go out, discover, pre-triage, and create Issues. You decide on a curated inbox. <strong>Multi-model routing:</strong> GPT-4o-mini (scouts) · GPT-4o (filter + gap sentinel) · Mistral-large (Brief Forge) · all free via <code>$GITHUB_TOKEN</code>.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px" id="agent-grid"></div>
+  <div class="card"><div class="ct">Live Agent Activity</div><div id="agent-feed"></div></div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pg" id="pg-pipeline">
+  <div class="ph">
+    <div><div class="pt">Pipeline Board</div><div class="ps">SCOUT INBOX → 7-STEP CYCLE · LIVE GITHUB ISSUES WHEN CONNECTED</div></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn bg bsm" onclick="openMo('nc')">+ New</button>
+      <button class="btn bo bsm" onclick="syncGH()">⟳ Sync</button>
+    </div>
+  </div>
+  <div class="kb" id="kanban"></div>
+</section>
+
+<!-- AI FILTER -->
+<section class="pg" id="pg-ai-filter">
+  <div class="ph"><div><div class="pt">AI Filter Engine</div><div class="ps">3-QUESTION NBSV FILTER · CLAUDE SONNET 4.6</div></div></div>
+  <div class="g2" style="gap:13px">
+    <div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="ct">Candidate Input</div>
+        <div class="fg"><div class="fl">Source Channel</div>
+          <div class="rg" id="fc-ch">
+            <div class="rp on" data-v="Asian Viral">Asian Viral</div>
+            <div class="rp" data-v="Concept Mine">Concept Mine</div>
+            <div class="rp" data-v="Concept Library">Concept Library</div>
+            <div class="rp" data-v="AI Ideation">AI Ideation</div>
+            <div class="rp" data-v="GitHub Intel">GitHub Intel</div>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Channel Signal</label><input id="fc-sig" placeholder="1688 suppliers: 5 / Kickstarter: 1240 backers / Stars: 180"></div>
+        <div class="fg"><label class="fl">What You Saw</label><textarea id="fc-desc" style="height:78px" placeholder="Product, AHA trigger, materials, context. Precise — read verbatim by filter."></textarea></div>
+        <div class="fg"><label class="fl">Egyptian Behavior Answer</label><input id="fc-beh" placeholder="What SPECIFIC Egyptian moment does this serve?"></div>
+        <div class="fg">
+          <div class="fl">Market Check <span id="ckct" style="color:var(--gold2)">(0/5)</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px" id="fc-cks">
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" style="width:auto;padding:0"> Jumia Egypt — clean</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" style="width:auto;padding:0"> Noon Egypt — clean</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" style="width:auto;padding:0"> Facebook Marketplace Egypt — clean</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" style="width:auto;padding:0"> Instagram Egypt — clean</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--t2)"><input type="checkbox" style="width:auto;padding:0"> Google Lens — clean</label>
+          </div>
+        </div>
+        <button class="btn bg" style="width:100%" onclick="runFilter()">◎ Run NBSV 3-Question Filter</button>
+      </div>
+    </div>
+    <div>
+      <div class="think" id="thinking"><div class="td3"></div><div class="td3"></div><div class="td3"></div><span>Running NBSV v5.0 filter via Claude Sonnet 4.6...</span></div>
+      <div class="vbox" id="vbox">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <div class="vbadge" id="vbadge"></div>
+          <div style="font-size:9px;font-family:var(--m);color:var(--t3)">claude-sonnet-4-6</div>
+        </div>
+        <div class="vbody" id="vbody"></div>
+        <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn bg bsm" id="v-add" style="display:none" onclick="addFromV()">+ Add to Pipeline</button>
+          <button class="btn bo bsm" onclick="copyV()">Copy</button>
+          <button class="btn bgh bsm" id="v-gh" style="display:none" onclick="postToGH()">→ Post to GitHub</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="ct" style="margin-bottom:8px">AHA Threshold Reference</div>
+        <div style="font-size:10px;font-family:var(--m);color:var(--t2);line-height:1.8">
+          <div style="color:var(--gold2)">Q1 — Never Before Seen</div>
+          <div style="color:var(--t3);margin-bottom:7px">All 5 platforms clean. One find = STOP. No exceptions.</div>
+          <div style="color:var(--gold2)">Q2 — AHA in 3 Seconds</div>
+          <div style="color:var(--t3);margin-bottom:7px">Hand reaches before brain decides. 2 of 4 reactions. "Interesting" ≠ AHA. Name specific Egyptian behavior or FAIL.</div>
+          <div style="color:var(--gold2)">Q3 — Workshop Producible</div>
+          <div style="color:var(--t3)">Green-list materials only. Zero electronics. Zero injection mold. ≤6 steps. COGS ≤80/≤120 EGP.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CANDIDATES -->
+<section class="pg" id="pg-candidates">
+  <div class="ph"><div><div class="pt">Candidate Log</div><div class="ps">LOCAL + GITHUB ISSUES · SCOUT-DISCOVERED FLAGGED</div></div><button class="btn bg bsm" onclick="openMo('nc')">+ New</button></div>
+  <div class="card">
+    <div style="overflow-x:auto">
+      <table class="dt"><thead><tr><th>Product</th><th>Source</th><th>Status</th><th>Path</th><th>Season</th><th>Origin</th><th></th></tr></thead>
+      <tbody id="cand-body"></tbody></table>
+    </div>
+    <div id="cand-empty" class="empty"><div class="ei">▣</div><div class="et">No candidates. Run AI filter or connect GitHub to sync Issues.</div></div>
+  </div>
+</section>
+
+<!-- WORKSHOP -->
+<section class="pg" id="pg-workshop">
+  <div class="ph"><div><div class="pt">Workshop Brief Generator</div><div class="ps">WHATSAPP-READY · NEVER REVEAL PRODUCT NAME TO WORKSHOP</div></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Spec Input</div>
+      <div class="fg"><label class="fl">Internal Reference (never share)</label><input id="wb-p" placeholder="Your private product name"></div>
+      <div class="fg"><label class="fl">One-Sentence Job for Workshop</label><input id="wb-d" placeholder='"MDF tray 40×25cm with 5 acrylic dividers"'></div>
+      <div class="fg"><label class="fl">Materials</label><input id="wb-m" placeholder="3mm MDF, 2mm clear acrylic"></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Batch</label><input type="number" id="wb-b" value="30"></div>
+        <div class="fg"><label class="fl">Target COGS (EGP)</label><input type="number" id="wb-c" placeholder="80"></div>
+      </div>
+      <div class="fg"><label class="fl">Deadline (days)</label><input type="number" id="wb-dl" placeholder="7"></div>
+      <div class="fg"><label class="fl">Path</label>
+        <div class="rg" id="wb-path"><div class="rp on" data-v="Standard">Standard</div><div class="rp" data-v="SemiDIY">Semi-DIY Base</div></div>
+      </div>
+      <div class="fg"><label class="fl">Steps (max 6, one per line)</label><textarea id="wb-s" placeholder="Cut MDF&#10;Cut acrylic dividers&#10;Deburr edges&#10;Dry-fit test&#10;Package"></textarea></div>
+      <button class="btn bg" style="width:100%" onclick="genBrief()">⚙ Generate Brief</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ct" style="margin-bottom:0">WhatsApp Output</div>
+        <button class="btn bo bsm" onclick="copyBrief()">Copy</button>
+      </div>
+      <div id="brief-out" style="background:var(--input);border:1px solid var(--b1);border-radius:var(--r);padding:11px;font-family:var(--m);font-size:10.5px;color:var(--t1);line-height:1.7;white-space:pre-wrap;max-height:255px;overflow-y:auto">Generate brief above...</div>
+      <div class="notice" style="margin-top:9px;font-size:9.5px"><strong>RULE:</strong> Never say product name, customer, or shop location to workshop.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ECONOMICS -->
+<section class="pg" id="pg-economics">
+  <div class="ph"><div><div class="pt">Unit Economics</div><div class="ps">LIVE MARGIN CALCULATOR · STANDARD + SEMI-DIY</div></div></div>
+  <div class="card" style="margin-bottom:11px">
+    <div class="ct">Variables</div>
+    <div class="g3">
+      <div class="esl"><div class="esll"><span>Batch Size</span><span id="v-ba">30</span> units</div><input type="range" min="10" max="100" value="30" step="5" oninput="ec()" id="sl-ba"></div>
+      <div class="esl"><div class="esll"><span>Materials</span><span id="v-mt">40</span> EGP</div><input type="range" min="15" max="100" value="40" step="5" oninput="ec()" id="sl-mt"></div>
+      <div class="esl"><div class="esll"><span>Workshop Labor</span><span id="v-lb">30</span> EGP</div><input type="range" min="10" max="80" value="30" step="5" oninput="ec()" id="sl-lb"></div>
+      <div class="esl"><div class="esll"><span>Packaging</span><span id="v-pk">8</span> EGP</div><input type="range" min="0" max="30" value="8" step="2" oninput="ec()" id="sl-pk"></div>
+      <div class="esl"><div class="esll"><span>Finish Layer</span><span id="v-fi">20</span> EGP</div><input type="range" min="0" max="50" value="20" step="5" oninput="ec()" id="sl-fi"></div>
+      <div class="esl"><div class="esll"><span>Shop Margin</span><span id="v-sm">50</span>%</div><input type="range" min="35" max="65" value="50" step="5" oninput="ec()" id="sl-sm"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="ep a">
+      <div style="font-family:var(--d);font-size:12px;font-weight:700;color:var(--t1);margin-bottom:11px">Standard Workshop</div>
+      <div class="er"><span class="el">Materials</span><span class="ev" id="e1m">—</span></div>
+      <div class="er"><span class="el">Workshop labor</span><span class="ev" id="e1l">—</span></div>
+      <div class="er"><span class="el">Packaging</span><span class="ev" id="e1p">—</span></div>
+      <div class="er tot"><span class="el">COGS / unit</span><span class="ev" id="e1c">—</span></div>
+      <div class="div" style="margin:5px 0"></div>
+      <div class="er"><span class="el">Wholesale</span><span class="ev" id="e1w">—</span></div>
+      <div class="er"><span class="el">Retail</span><span class="ev" id="e1r">—</span></div>
+      <div class="er tot"><span class="el">Batch profit ×3 shops</span><span class="ev" id="e1t">—</span></div>
+      <div style="font-size:9px;font-family:var(--m);color:var(--t3);margin-top:7px">Target: COGS ≤80 EGP · Wholesale ≥150 EGP</div>
+    </div>
+    <div class="ep">
+      <div style="font-family:var(--d);font-size:12px;font-weight:700;color:var(--t1);margin-bottom:11px">Semi-DIY Finish Path</div>
+      <div class="er"><span class="el">Materials</span><span class="ev" id="e2m">—</span></div>
+      <div class="er"><span class="el">Workshop labor (base)</span><span class="ev" id="e2l">—</span></div>
+      <div class="er"><span class="el">Finish materials</span><span class="ev" id="e2f">—</span></div>
+      <div class="er"><span class="el">Packaging</span><span class="ev" id="e2p">—</span></div>
+      <div class="er tot"><span class="el">COGS / unit</span><span class="ev" id="e2c">—</span></div>
+      <div class="div" style="margin:5px 0"></div>
+      <div class="er"><span class="el">Wholesale</span><span class="ev" id="e2w">—</span></div>
+      <div class="er"><span class="el">Retail</span><span class="ev" id="e2r">—</span></div>
+      <div class="er tot"><span class="el">Batch profit ×3 shops</span><span class="ev" id="e2t">—</span></div>
+      <div style="font-size:9px;font-family:var(--m);color:var(--t3);margin-top:7px">Target: COGS ≤120 EGP · +70% margin vs Standard</div>
+    </div>
+  </div>
+</section>
+
+<!-- SEASONS -->
+<section class="pg" id="pg-seasons">
+  <div class="ph"><div><div class="pt">Seasonal Intelligence</div><div class="ps">EGYPT'S 8 DEMAND WINDOWS · AMPLIFIERS NOT GATES</div></div></div>
+  <div class="notice" style="margin-bottom:12px"><strong>RULE:</strong> Continuous demand products sell year-round. Season-amplified: 0–2w = ABORT · 3–6w = PROCEED · 6–8w = ACCEPTABLE · 8w+ = HOLD</div>
+  <div id="season-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+</section>
+
+<!-- FAILURES -->
+<section class="pg" id="pg-failures">
+  <div class="ph">
+    <div><div class="pt">Failure Pattern Library</div><div class="ps">KILL-SIGNAL INTELLIGENCE · PATTERN BRAIN READS MONTHLY</div></div>
+    <button class="btn bo bsm" onclick="openMo('nf')">+ Log Rejection</button>
+  </div>
+  <div class="g2" style="margin-bottom:11px">
+    <div class="card"><div class="ct">Kill Signal Frequency</div><div id="kill-chart"><div class="empty"><div class="ei">◻</div><div class="et">Log rejections to build patterns</div></div></div></div>
+    <div class="card">
+      <div class="ct">AI Pattern Analysis</div>
+      <textarea id="pat-ctx" placeholder="Auto-loaded from data. Paste extra context..." style="height:72px;margin-bottom:8px"></textarea>
+      <button class="btn bg bsm" style="width:100%" onclick="analyzeP()">◎ Analyze Patterns</button>
+      <div id="pat-out" style="margin-top:8px;font-size:10px;font-family:var(--m);color:var(--t2);line-height:1.6;display:none;white-space:pre-wrap"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="ct" style="margin-bottom:0">Log</div>
+      <span id="fail-ct" style="font-size:9px;font-family:var(--m);color:var(--t3)">0 entries</span>
+    </div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Product</th><th>Source</th><th>Kill Signal</th><th>Notes</th><th>Date</th></tr></thead><tbody id="fail-body"></tbody></table></div>
+    <div id="fail-empty" class="empty"><div class="ei">◻</div><div class="et">Every rejection is pattern intelligence. Log them.</div></div>
+  </div>
+</section>
+
+<!-- INTEL -->
+<section class="pg" id="pg-intel">
+  <div class="ph"><div><div class="pt">Intelligence Layer</div><div class="ps">GITHUB 2026 POWER · ELITE REPOS · AI STACK · MCP · MULTI-MODEL ROUTING</div></div></div>
+  <div class="g2" style="gap:12px">
+    <div>
+      <div class="card" style="margin-bottom:10px"><div class="ct">GitHub Topics — Fork & Watch</div><div id="i-topics" style="display:flex;flex-direction:column;gap:5px"></div></div>
+      <div class="card"><div class="ct">GitHub Code Search — Design Files</div><div id="i-queries" style="display:flex;flex-direction:column;gap:5px"></div></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:10px"><div class="ct">AI Tool Stack (Free Tiers 2026)</div><div id="i-ai" style="display:flex;flex-direction:column;gap:5px"></div></div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="ct">v5.0 Multi-Model Routing</div>
+        <div class="notice gr" style="font-size:9.5px;margin-bottom:9px">All free via <code>$GITHUB_TOKEN</code>. Right model per task type — not GPT-4o for everything.</div>
+        <div id="i-model-routing" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+      <div class="card">
+        <div class="ct">GitHub MCP + 2026 Tools</div>
+        <div class="notice gr" style="font-size:9.5px;margin-bottom:9px"><strong>github/github-mcp-server</strong> — Connect Claude directly to your repo. Read Issues, post comments, move cards — no copy-paste.</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <a href="https://github.com/github/github-mcp-server" target="_blank" class="btn bgh bsm">github/github-mcp-server →</a>
+          <a href="https://github.com/marketplace/models" target="_blank" class="btn bag bsm">GitHub Models Marketplace →</a>
+          <a href="https://github.com/features/copilot/workspace" target="_blank" class="btn bo bsm">Copilot Workspace →</a>
+          <a href="https://spark.github.com" target="_blank" class="btn bo bsm">GitHub Spark →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="pg" id="pg-settings">
+  <div class="ph"><div><div class="pt">Settings</div><div class="ps">GITHUB LIVE · CLAUDE API · DATA MANAGEMENT</div></div></div>
+  <div style="max-width:500px">
+    <div class="card" style="margin-bottom:11px">
+      <div class="ct">GitHub Live Connection</div>
+      <div class="notice" style="margin-bottom:11px;font-size:9.5px"><strong>PAT required:</strong> repo + workflow scopes. <a href="https://github.com/settings/tokens/new?scopes=repo,workflow" target="_blank" style="color:var(--gold2)">Create token →</a></div>
+      <div class="fg"><label class="fl">Personal Access Token</label><input type="password" id="s-pat" placeholder="ghp_..."></div>
+      <div class="fg"><label class="fl">Repository (username/repo-name)</label><input id="s-repo" placeholder="your-username/nbsv-engine"></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bg bsm" onclick="connectGH()">Connect</button>
+        <button class="btn bgh bsm" onclick="syncGH()">⟳ Sync</button>
+        <button class="btn bo bsm" onclick="disconnectGH()">Disconnect</button>
+      </div>
+      <div id="gh-st" style="margin-top:8px;font-size:10px;font-family:var(--m);color:var(--t3)"></div>
+    </div>
+    <div class="card" style="margin-bottom:11px">
+      <div class="ct">Claude API Key</div>
+      <div class="fg"><label class="fl">API Key (for AI Filter Engine)</label><input type="password" id="s-ck" placeholder="sk-ant-..."></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bg bsm" onclick="saveCK()">Save</button>
+        <button class="btn bo bsm" onclick="testCK()">Test</button>
+      </div>
+      <div id="ck-st" style="margin-top:7px;font-size:10px;font-family:var(--m);color:var(--t3)"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Data</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="btn bo bsm" onclick="exportD()">↓ Export JSON</button>
+        <button class="btn bo bsm" onclick="importD()">↑ Import JSON</button>
+        <button class="btn br bsm" onclick="clearD()">⚠ Clear All Local Data</button>
+      </div>
+      <div class="notice" style="margin-top:9px;font-size:9.5px">Local: <span id="d-ct">—</span></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- MODALS -->
+<div class="mo" id="mo-nc">
+  <div class="modal">
+    <div class="mh"><div class="mt">+ New Candidate</div><button class="mx" onclick="closeMo('nc')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Product Name</label><input id="nc-n" placeholder="Internal reference only"></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Source</label><select id="nc-ch"><option>Asian Viral</option><option>Concept Mine</option><option>Concept Library</option><option>AI Ideation</option><option>GitHub Intel</option></select></div>
+        <div class="fg"><label class="fl">Status</label><select id="nc-st"><option>Scanned</option><option>Filter Pass</option><option>Pre-Sell</option><option>Production</option><option>Distributed</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Egyptian Behavior</label><input id="nc-beh" placeholder="Specific Egyptian behavior this serves"></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Path</label><select id="nc-pa"><option value="Standard">Standard</option><option value="Semi-DIY">Semi-DIY</option></select></div>
+        <div class="fg"><label class="fl">Season</label><select id="nc-se"><option>Continuous</option><option>Ramadan</option><option>Eid El Fitr</option><option>Eid El Adha</option><option>Mother's Day</option><option>Back to School</option><option>Valentine's</option><option>New Home</option><option>NYE</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Shop Deposits Confirmed</label><input type="number" id="nc-sh" value="0" min="0"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea id="nc-no" placeholder="AHA signal, COGS estimate, channel signal..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn bo bsm" onclick="closeMo('nc')">Cancel</button><button class="btn bg bsm" onclick="saveC()">Save</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-nf">
+  <div class="modal">
+    <div class="mh"><div class="mt">◻ Log Rejection</div><button class="mx" onclick="closeMo('nf')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Product (5 words max)</label><input id="nf-n"></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Source</label><select id="nf-ch"><option>Asian Viral</option><option>Concept Mine</option><option>Concept Library</option><option>AI Ideation</option><option>GitHub Intel</option></select></div>
+        <div class="fg"><label class="fl">Kill Signal</label><select id="nf-k">
+          <option value="fail-electronics">Electronics component</option>
+          <option value="fail-injection-mold">Injection molding</option>
+          <option value="fail-imported-component">Imported core component</option>
+          <option value="fail-no-aha">No AHA in 3 seconds</option>
+          <option value="fail-needs-explanation">Needs explanation</option>
+          <option value="fail-intellectual-aha">Clever not desired</option>
+          <option value="fail-assembly-complex">&gt;6 steps</option>
+          <option value="fail-cogs-high">COGS too high</option>
+          <option value="fail-no-egyptian-fit">No Egyptian behavior</option>
+          <option value="fail-chinese-context">China-specific context</option>
+          <option value="on-jumia">Found on Jumia</option>
+          <option value="on-noon">Found on Noon</option>
+          <option value="on-facebook">Found on Facebook EG</option>
+          <option value="on-instagram">Found on Instagram EG</option>
+          <option value="in-shops">In Egyptian shops</option>
+          <option value="presell-fail">&lt;2 deposits</option>
+        </select></div>
+      </div>
+      <div class="fg"><label class="fl">Why It Seemed Promising</label><textarea id="nf-r" placeholder="What made you spend time on it?"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn bo bsm" onclick="closeMo('nf')">Cancel</button><button class="btn br bsm" onclick="saveF()">Log Rejection</button></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const g=k=>{try{return JSON.parse(localStorage.getItem('nbsv3_'+k)||'null');}catch{return null;}};
+const sv=(k,v)=>{try{localStorage.setItem('nbsv3_'+k,JSON.stringify(v));}catch{}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const f=n=>n+' EGP';
+
+let D={cands:g('cands')||[],fails:g('fails')||[],ckey:g('ckey')||'',gpat:g('gpat')||'',grepo:g('grepo')||'',gissues:[],gruns:[],connected:false};
+const save=()=>{sv('cands',D.cands);sv('fails',D.fails);sv('ckey',D.ckey);sv('gpat',D.gpat);sv('grepo',D.grepo);badges();};
+
+// NAV
+const nav=p=>{
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.ni[data-p]').forEach(x=>x.classList.remove('on'));
+  $('pg-'+p)?.classList.add('on');
+  document.querySelector(`[data-p="${p}"]`)?.classList.add('on');
+  const renders={overview:renderOV,pipeline:renderKanban,candidates:renderCands,failures:renderFails,seasons:renderSeasons,economics:ec,intel:renderIntel,agents:renderAgents,settings:renderSettings};
+  renders[p]?.();
+};
+document.querySelectorAll('.ni[data-p]').forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
+
+// GITHUB
+const ghf=async(ep,opts={})=>{
+  if(!D.gpat||!D.grepo)return null;
+  const[o,r]=D.grepo.split('/');
+  const res=await fetch(`https://api.github.com/repos/${o}/${r}${ep}`,{...opts,headers:{'Authorization':`Bearer ${D.gpat}`,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.headers||{})}});
+  if(!res.ok)return null;return res.json();
+};
+
+const connectGH=async()=>{
+  const pat=$('s-pat').value.trim(),repo=$('s-repo').value.trim();
+  if(!pat||!repo){alert('Enter PAT and repo.');return;}
+  D.gpat=pat;D.grepo=repo;
+  const st=$('gh-st');st.textContent='Testing...';
+  const d=await ghf('');
+  if(d){D.connected=true;save();st.textContent=`✓ Connected: ${d.full_name}`;st.style.color='var(--green)';ghPill(true);syncGH();}
+  else{st.textContent='✗ Failed — check PAT and repo name';st.style.color='var(--red)';}
+};
+
+const syncGH=async()=>{
+  if(!D.gpat||!D.grepo)return;
+  $('sync-btn').textContent='⟳ Syncing...';
+  const[issues,runs]=await Promise.all([ghf('/issues?state=all&per_page=100'),ghf('/actions/runs?per_page=15')]);
+  if(issues&&Array.isArray(issues)){D.gissues=issues;D.connected=true;ghPill(true);$('live-bar').style.display='flex';$('live-ct').textContent=issues.length;}
+  if(runs?.workflow_runs)D.gruns=runs.workflow_runs;
+  $('sync-btn').textContent='⟳ Sync';
+  renderOV();renderKanban();renderCands();renderFails();renderAgents();
+};
+
+const disconnectGH=()=>{D.gpat='';D.grepo='';D.connected=false;D.gissues=[];D.gruns=[];save();ghPill(false);$('live-bar').style.display='none';$('gh-st').textContent='Disconnected.';};
+
+const ghPill=live=>{$('ghpill').className='ghp'+(live?' live':' off');$('ghptxt').textContent=live?`Live: ${D.grepo.split('/')[1]}`:'Connect GitHub';};
+
+const triggerWF=async wf=>{
+  if(!D.gpat||!D.grepo){alert('Connect GitHub first.');return;}
+  const[o,r]=D.grepo.split('/');
+  const res=await fetch(`https://api.github.com/repos/${o}/${r}/actions/workflows/${wf}/dispatches`,{method:'POST',headers:{'Authorization':`Bearer ${D.gpat}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({ref:'main'})});
+  if(res.status===204)alert(`✓ ${wf} triggered. Check GitHub Actions in ~30s.`);
+  else alert(`Could not trigger ${wf} (${res.status}).`);
+};
+const triggerScouts=()=>{
+  if(!D.connected){alert('Connect GitHub first.');nav('settings');return;}
+  ['scout-reddit.yml','scout-rss.yml','scout-kickstarter.yml'].forEach(triggerWF);
+  alert('✓ All 3 scout agents triggered. Issues appear in ~2 minutes.');
+};
+const triggerAll=()=>['scout-reddit.yml','scout-rss.yml','scout-kickstarter.yml','orchestrator.yml','gap-sentinel.yml','season-pulse.yml'].forEach(triggerWF);
+
+const createIssue=async(title,body,labels)=>ghf('/issues',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,body,labels})});
+
+// DATA MERGE
+const allCands=()=>{
+  const local=D.cands.map(c=>({...c,_src:'local'}));
+  if(!D.gissues.length)return local;
+  const gc=D.gissues.filter(i=>i.labels.some(l=>['candidate','principle-1-pass','principle-3-pass','in-production','pre-sell-confirmed','distributed','closed-won','rejected','scout-reddit','scout-yanko','scout-core77','scout-kickstarter','needs-human-review'].includes(l.name))).map(i=>{
+    const ls=i.labels.map(l=>l.name);
+    const isScout=ls.some(l=>['scout-reddit','scout-yanko','scout-core77','scout-kickstarter'].includes(l));
+    const needsHuman=ls.includes('needs-human-review');
+    const aiClear=ls.includes('ai-likely-clear');const aiFound=ls.includes('ai-flagged-found');
+    const st=ls.includes('closed-won')?'Closed-Won':ls.includes('rejected')?'Closed-Lost':ls.includes('in-production')?'Production':ls.includes('pre-sell-confirmed')?'Pre-Sell':ls.includes('principle-3-pass')||ls.includes('brief-ready')?'Filter Pass':ls.includes('principle-1-pass')?'Market Verified':isScout&&!ls.includes('ai-filter-pass')?'Scout Inbox':'Scanned';
+    const src=ls.find(l=>l.startsWith('source-'))?.replace('source-','').replace(/-/g,' ')||'Unknown';
+    const scoutSrc=ls.find(l=>l.startsWith('scout-'))?.replace('scout-','').replace(/-/g,' ')||null;
+    return{id:'gh'+i.number,name:i.title.replace(/^[🎯◈▣⚙️◻]\s*\[.*?\]\s*/,'').trim(),channel:src,status:st,path:ls.includes('semi-diy')?'Semi-DIY':'Standard',season:ls.includes('season-amplified')?'Season':'Continuous',shops:0,notes:'',created:i.created_at.slice(0,10),_src:'github',_url:i.html_url,_no:i.number,_scout:isScout,_scoutSrc:scoutSrc,_needsHuman:needsHuman,_aiClear:aiClear,_aiFound:aiFound,_highSignal:ls.includes('high-signal')};
+  });
+  const ghn=new Set(gc.map(c=>c.name.toLowerCase().slice(0,18)));
+  return[...gc,...local.filter(c=>!ghn.has(c.name.toLowerCase().slice(0,18)))];
+};
+const allFails=()=>{
+  const local=D.fails.map(f=>({...f,_src:'local'}));
+  if(!D.gissues.length)return local;
+  const gf=D.gissues.filter(i=>i.labels.some(l=>l.name==='rejected')).map(i=>{
+    const ls=i.labels.map(l=>l.name);
+    const kill=ls.find(l=>l.startsWith('fail-')||l.startsWith('on-')||l==='presell-fail')||'untagged';
+    const src=ls.find(l=>l.startsWith('source-'))?.replace('source-','').replace(/-/g,' ')||'Unknown';
+    return{id:'gh'+i.number,name:i.title.replace(/^◻\s*/,''),channel:src,kill,reason:'',date:i.created_at.slice(0,10),_src:'github',_no:i.number};
+  });
+  const ghn=new Set(gf.map(f=>f.name.toLowerCase().slice(0,14)));
+  return[...gf,...local.filter(f=>!ghn.has(f.name.toLowerCase().slice(0,14)))];
+};
+
+// SEASONS DATA
+const SEA=[
+  {n:"Valentine's",e:'💝',m:2,dy:14},{n:"Mother's Day",e:'🌸',m:3,dy:21},
+  {n:'Ramadan',e:'🌙',dt:new Date(2026,2,1)},{n:'Eid El Fitr',e:'🌙',dt:new Date(2026,2,30)},
+  {n:'Eid El Adha',e:'🐑',dt:new Date(2026,5,6)},{n:'Back to School',e:'📚',m:9,dy:10},
+  {n:'New Home Season',e:'🏠',m:10,dy:15},{n:'Christmas/NYE',e:'🎄',m:12,dy:25},
+];
+const sDate=s=>{if(s.dt)return new Date(s.dt);const y=new Date().getFullYear();const d=new Date(y,s.m-1,s.dy);if(d<new Date())d.setFullYear(y+1);return d;};
+const nextSea=()=>SEA.map(s=>{const d=sDate(s);return{...s,days:Math.ceil((d-new Date())/86400000)};}).filter(s=>s.days>0).sort((a,b)=>a.days-b.days)[0]||null;
+
+// STAGES
+const STAGES=['Scout Inbox','Scanned','Market Verified','Filter Pass','Pre-Sell','Production','Distributed','Closed-Won','Closed-Lost'];
+const EMO={'Scout Inbox':'🕵️',Scanned:'🔍','Market Verified':'✅','Filter Pass':'🎯','Pre-Sell':'💰',Production:'🏭',Distributed:'🚚','Closed-Won':'📊','Closed-Lost':'🗑️'};
+
+// OVERVIEW
+const renderOV=()=>{
+  const cands=allCands(),fails=allFails();
+  const active=cands.filter(c=>!['Closed-Won','Closed-Lost'].includes(c.status)).length;
+  const passes=cands.filter(c=>!['Scanned','Closed-Lost'].includes(c.status)).length;
+  const cycles=cands.filter(c=>c.status==='Closed-Won').length;
+  const scoutInbox=cands.filter(c=>c.status==='Scout Inbox').length;
+  $('tb-active').textContent=active;$('tb-passes').textContent=passes;
+  badges();
+  $('ov-stats').innerHTML=[
+    {n:active,l:'Active',s:'In pipeline',c:'g',nc:'g'},
+    {n:scoutInbox,l:'Scout Inbox',s:'Awaiting review',c:'b',nc:'b'},
+    {n:passes,l:'Passes',s:'All-time',c:'gr',nc:'gr'},
+    {n:fails.length,l:'Failures',s:'Pattern library',c:'r',nc:''},
+    {n:cycles,l:'Cycles Won',s:'Completed',c:'v',nc:''},
+  ].map(x=>`<div class="sc ${x.c}"><div class="sn ${x.nc}">${x.n}</div><div class="sl">${x.l}</div><div class="sm">${x.s}</div></div>`).join('');
+
+  $('ov-pipe').innerHTML=STAGES.slice(0,6).map(st=>{const n=cands.filter(c=>c.status===st).length;return`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b1);font-size:10px"><span style="color:var(--t2);font-family:var(--m)">${EMO[st]||'·'} ${st}</span><span style="font-family:var(--m);font-weight:600;color:${n>0?'var(--gold2)':'var(--t3)'}">${n}</span></div>`;}).join('');
+
+  const ns=nextSea();
+  if(ns){const cc=ns.days<=14?'var(--red)':ns.days<=42?'var(--gold2)':'var(--t2)';const st=ns.days<=14?'🚨 ACT NOW':ns.days<=42?'✅ PROCEED':ns.days<=56?'⚡ PLAN':'⏳ HOLD';
+    $('ov-season').innerHTML=`<div style="text-align:center;padding:10px"><div style="font-size:22px;margin-bottom:4px">${ns.e}</div><div style="font-family:var(--d);font-size:14px;font-weight:700">${ns.n}</div><div style="font-family:var(--d);font-size:26px;font-weight:800;color:${cc};margin:4px 0">${ns.days}</div><div style="font-size:9px;font-family:var(--m);color:var(--t3)">days away</div><div style="margin-top:4px;font-size:9.5px;font-family:var(--m);color:${cc};font-weight:600">${st}</div></div>`;
+    $('tb-season').innerHTML=`<span style="color:${ns.days<=42?'var(--gold2)':'inherit'}">${ns.e} ${ns.n} (${ns.days}d)</span>`;
+  }
+
+  const km={};fails.forEach(f=>{km[f.kill]=(km[f.kill]||0)+1;});
+  const ks=Object.entries(km).sort((a,b)=>b[1]-a[1]).slice(0,5);const mx=ks[0]?.[1]||1;
+  $('ov-kills').innerHTML=ks.length?ks.map(([k,v])=>`<div class="kbar"><div class="kbl">${k.replace(/fail-|on-/g,'').replace(/-/g,' ')}</div><div class="kbw"><div class="kbf" style="width:${Math.round(v/mx*100)}%"></div></div><div class="kbn">${v}</div></div>`).join(''):'<div class="empty"><div class="ei">◻</div><div class="et">No failures logged yet</div></div>';
+
+  $('ov-qa').innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
+    <button class="btn bg" onclick="triggerScouts()" title="Trigger all 3 scout agents now">🕵️ Trigger Scout Agents</button>
+    <button class="btn bo" onclick="nav('ai-filter')">◎ Run AI Filter Engine</button>
+    <button class="btn bo" onclick="openMo('nc')">+ Log Manual Candidate</button>
+    <button class="btn bo" onclick="openMo('nf')">◻ Log Rejection</button>
+    <button class="btn bag" onclick="nav('agents')">⟳ Agent Console</button>
+    <button class="btn bgh" onclick="syncGH()">⬡ Sync GitHub Issues</button>
+  </div>`;
+};
+
+// AGENTS
+const AGENTS=[
+  {wf:'scout-reddit.yml',ic:'🕵️',nm:'Scout Reddit',dc:'Every Wed 08:00. Fetches r/somebodymakethis top posts. GPT-4o-mini triage. Auto-creates Issues for PASS/INVESTIGATE. FAILs discarded silently.',tr:'Every Wed 08:00',scout:true},
+  {wf:'scout-rss.yml',ic:'📡',nm:'Scout RSS',dc:'Daily 08:30. Fetches Yanko Design + Core77 RSS. GPT-4o-mini triage. Auto-creates Issues for workshop-producible design concepts.',tr:'Daily 08:30',scout:true},
+  {wf:'scout-kickstarter.yml',ic:'💡',nm:'Scout Kickstarter',dc:'Every Sun 09:00. Searches Kickstarter product design. GPT-4o-mini triage. High-backer campaigns auto-labeled high-signal.',tr:'Every Sun 09:00',scout:true},
+  {wf:'orchestrator.yml',ic:'🧭',nm:'Orchestrator',dc:'Routes every Issue event. Manual submissions: runs full GPT-4o 3-question filter. Scout issues: activates filter when behavior field is filled.',tr:'On every Issue'},
+  {wf:'gap-sentinel.yml',ic:'🔍',nm:'Gap Sentinel',dc:'Daily 09:00. GPT-4o reasoning-based Q1 pre-assessment — LIKELY_CLEAR / UNCERTAIN / LIKELY_FOUND. Reduces manual Q1 checking by ~75%.',tr:'Daily 09:00 EGY'},
+  {wf:'brief-forge.yml',ic:'⚙️',nm:'Brief Forge',dc:'Triggered by principle-3-pass label. Generates WhatsApp workshop spec using Mistral-large (manufacturing vocabulary). Falls back to GPT-4o.',tr:'On principle-3-pass'},
+  {wf:'season-pulse.yml',ic:'📅',nm:'Season Pulse',dc:'Every Monday. Calculates 8 season countdowns. Labels urgent candidates. Creates weekly briefing Issue.',tr:'Every Monday'},
+  {wf:'pattern-brain.yml',ic:'🧠',nm:'Pattern Brain',dc:'1st of month. Failure analysis via GPT-4o. NEW: reads closed-won + stalled outcomes → proposes egyptian-behaviors.json update PR.',tr:'1st monthly'},
+  {wf:'presell-sentinel.yml',ic:'💰',nm:'Presell Sentinel',dc:'Wed + Sat. Tracks stalled pre-sells. Posts nudge at day 7. Activates production on deposit confirmation.',tr:'Wed + Sat'},
+];
+
+const renderAgents=()=>{
+  if(D.grepo)$('gh-acts-link').href=`https://github.com/${D.grepo}/actions`;
+  $('agent-grid').innerHTML=AGENTS.map(a=>{
+    const lr=D.gruns.find(r=>r.path?.includes(a.wf.replace('.yml','')))||D.gruns.find(r=>r.name?.toLowerCase().includes(a.nm.toLowerCase().split(' ')[0].toLowerCase()));
+    const ok=lr?.conclusion==='success';const run=lr?.status==='in_progress';const fail=lr?.conclusion==='failure';
+    const dc=D.connected?(ok?'live':run?'amber':'off'):'off';
+    const sc=D.connected?(ok?'color:var(--green)':run?'color:var(--gold2)':fail?'color:var(--red)':'color:var(--t3)'):'color:var(--t3)';
+    const st=D.connected?(ok?'✓ Last run succeeded':run?'⟳ Running now':fail?'✗ Last run failed':'Awaiting first run'):'Connect GitHub to activate';
+    const scoutBadge=a.scout?`<span style="font-size:8px;font-family:var(--m);background:rgba(43,101,212,.15);color:#7AA0F0;padding:1px 5px;border-radius:3px;font-weight:600">SCOUT</span> `:'';
+    return`<div class="ag"><div class="ag-ic">${a.ic}</div><div style="flex:1"><div class="ag-nm">${scoutBadge}${a.nm}</div><div class="ag-dc">${a.dc}</div><div class="ag-mt"><div class="adot ${dc}"></div><span class="ast" style="${sc}">${st}</span><span style="font-size:9px;font-family:var(--m);color:var(--t3)"> · ${a.tr}</span></div></div><div class="ag-acts"><button class="btn bo bxs" onclick="triggerWF('${a.wf}')" title="Trigger">▶</button>${D.grepo?`<a href="https://github.com/${D.grepo}/actions/workflows/${a.wf}" target="_blank" class="btn bo bxs">⬡</a>`:''}</div></div>`;
+  }).join('');
+
+  const feed=$('agent-feed');
+  if(!D.gruns.length){feed.innerHTML=`<div class="empty"><div class="ei">⟳</div><div class="et">${D.connected?'No recent runs. Trigger an agent to start.':'Connect GitHub to see live agent activity.'}</div></div>`;return;}
+  feed.innerHTML='<div class="afd">'+D.gruns.slice(0,10).map(r=>{
+    const sc=r.conclusion==='success'?'afok':r.status==='in_progress'?'afrun':'affail';
+    const st=r.conclusion==='success'?'✓ done':r.status==='in_progress'?'⟳ running':'✗ failed';
+    const ago=Math.floor((Date.now()-new Date(r.updated_at||r.created_at))/60000);
+    return`<div class="afi"><span class="afst ${sc}">${st}</span><span class="afnm">${r.name||r.workflow_id||'workflow'}</span><span class="aftm">${ago<60?ago+'m':Math.floor(ago/60)+'h'} ago</span>${D.grepo&&r.html_url?`<a href="${r.html_url}" target="_blank" class="btn bo bxs">↗</a>`:''}</div>`;
+  }).join('')+'</div>';
+};
+
+// KANBAN
+const renderKanban=()=>{
+  const cands=allCands();
+  $('kanban').innerHTML=STAGES.map(st=>{
+    const stcands=cands.filter(c=>c.status===st);
+    const cards=stcands.map(c=>{
+      const scoutTag=c._scout?`<span class="tag" style="background:rgba(43,101,212,.12);color:#7AA0F0">${c._scoutSrc||'scout'}</span>`:'';
+      const aiTag=c._aiClear?`<span class="tag" style="background:rgba(18,166,102,.1);color:var(--green)">AI✓</span>`:c._aiFound?`<span class="tag" style="background:rgba(191,43,43,.1);color:var(--red)">AI⚠</span>`:'';
+      const humanTag=c._needsHuman?`<span class="tag tu">review</span>`:'';
+      const signalTag=c._highSignal?`<span class="tag" style="background:rgba(191,122,10,.12);color:var(--gold2)">★</span>`:'';
+      return`<div class="kcard${c._src==='github'?' live':''}${c.season!=='Continuous'?' urg':''}" onclick="${c._src==='github'&&c._url?`window.open('${c._url}','_blank')`:`advC('${c.id}')`}"><div class="kn">${c.name}</div><div class="tags"><span class="tag tc">${(c.channel||'').split(' ')[0]}</span>${c.path==='Semi-DIY'?'<span class="tag td">DIY</span>':''}${c.season!=='Continuous'?'<span class="tag tu">⏱</span>':''}${c._src==='github'?'<span class="tag tl">GH</span>':''}${scoutTag}${aiTag}${humanTag}${signalTag}</div></div>`;
+    }).join('')||`<div class="kempty">—</div>`;
+    return`<div class="kc"><div class="kh"><span class="kht">${EMO[st]||'·'} ${st}</span><span class="kcount">${stcands.length}</span></div><div class="kcds">${cards}</div></div>`;
+  }).join('');
+};
+const advC=id=>{const c=D.cands.find(x=>x.id===id);if(!c)return;const i=STAGES.indexOf(c.status);if(i<STAGES.length-1){c.status=STAGES[i+1];save();renderKanban();renderOV();}};
+
+// CANDIDATES TABLE
+const renderCands=()=>{
+  const all=allCands();$('cand-body').innerHTML='';$('cand-empty').style.display=all.length?'none':'block';
+  all.forEach(c=>{const sc=c.status==='Closed-Won'?'cp':c.status==='Closed-Lost'?'cf':['Production','Distributed'].includes(c.status)?'cl':'cn';const tr=document.createElement('tr');
+    const scoutBadge=c._scout?`<span class="chip" style="background:rgba(43,101,212,.1);color:#7AA0F0;margin-left:3px">${c._scoutSrc||'scout'}</span>`:'';
+    const aiTag=c._aiClear?`<span class="chip cp" style="font-size:7.5px">AI✓</span>`:c._aiFound?`<span class="chip cf" style="font-size:7.5px">AI⚠</span>`:'';
+    tr.innerHTML=`<td>${c.name}${scoutBadge}</td><td style="font-size:9.5px;color:var(--blue);font-family:var(--m)">${c.channel}</td><td><span class="chip ${sc}">${c.status}</span>${aiTag}</td><td style="font-size:10.5px">${c.path}</td><td style="font-size:9.5px;font-family:var(--m);color:${c.season==='Continuous'?'var(--t3)':'var(--ember)'}">${c.season}</td><td><span class="chip ${c._src==='github'?'cl':'cn'}">${c._src==='github'?'GitHub':'Local'}</span></td><td>${c._src==='local'?`<button class="btn bo bxs" onclick="delC('${c.id}')">✕</button>`:c._url?`<a href="${c._url}" target="_blank" class="btn bo bxs">#${c._no}</a>`:''}`;
+    $('cand-body').appendChild(tr);});
+};
+const delC=id=>{if(!confirm('Remove?'))return;D.cands=D.cands.filter(c=>c.id!==id);save();renderCands();renderKanban();};
+
+// FAILURES
+const renderFails=()=>{
+  const all=allFails();$('fail-ct').textContent=all.length+' entries';$('fail-body').innerHTML='';$('fail-empty').style.display=all.length?'none':'block';
+  [...all].reverse().forEach(f=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${f.name}</td><td style="font-size:9.5px;color:var(--blue);font-family:var(--m)">${f.channel}</td><td><span class="chip cf">${f.kill.replace(/fail-|on-/g,'').replace(/-/g,' ')}</span></td><td style="font-size:10.5px;color:var(--t3)">${f.reason||'—'}</td><td style="font-size:9.5px;font-family:var(--m);color:var(--t3)">${f.date}</td>`;$('fail-body').appendChild(tr);});
+  const km={};all.forEach(f=>{km[f.kill]=(km[f.kill]||0)+1;});
+  const ks=Object.entries(km).sort((a,b)=>b[1]-a[1]);const mx=ks[0]?.[1]||1;
+  $('kill-chart').innerHTML=ks.length?ks.map(([k,v])=>`<div class="kbar"><div class="kbl">${k.replace(/fail-|on-/g,'').replace(/-/g,' ')}</div><div class="kbw"><div class="kbf" style="width:${Math.round(v/mx*100)}%"></div></div><div class="kbn">${v}</div></div>`).join(''):'<div class="empty"><div class="ei">◻</div><div class="et">Log rejections to see patterns</div></div>';
+};
+
+// SEASONS
+const renderSeasons=()=>{
+  const t=new Date();
+  $('season-grid').innerHTML=SEA.map(s=>{
+    const dt=sDate(s);const d=Math.ceil((dt-t)/86400000);
+    const cls=d<0?'past':d<=14?'imm':'up';
+    const cc=d<0?'var(--t3)':d<=14?'var(--red)':'var(--gold2)';
+    const st=d<0?'Passed':d<=14?'🚨 ACT NOW':d<=42?'✅ PROCEED':d<=56?'⚡ PLAN':'⏳ HOLD';
+    return`<div class="scard ${cls}"><div style="font-size:20px;margin-bottom:4px">${s.e}</div><div style="font-size:11px;font-weight:600;color:var(--t1);margin-bottom:2px">${s.n}</div><div style="font-size:9px;font-family:var(--m);color:var(--t3);margin-bottom:5px">${dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div><div style="font-family:var(--d);font-size:21px;font-weight:800;color:${cc}">${Math.abs(d)}</div><div style="font-size:9px;font-family:var(--m);color:var(--t3);text-transform:uppercase">days ${d<0?'ago':'away'}</div><div style="margin-top:4px;font-size:9.5px;font-family:var(--m);color:${cc};font-weight:600">${st}</div></div>`;
+  }).join('');
+};
+
+// ECONOMICS
+const ec=()=>{
+  const ba=+$('sl-ba').value,mt=+$('sl-mt').value,lb=+$('sl-lb').value,pk=+$('sl-pk').value,fi=+$('sl-fi').value,sm=+$('sl-sm').value/100;
+  ['ba','mt','lb','pk','fi','sm'].forEach(k=>$('v-'+k).textContent=k==='sm'?Math.round(sm*100):eval(k));
+  const c1=mt+lb+pk,ws1=Math.round(c1/(1-sm/2)/10)*10,rt1=Math.round(ws1/(1-sm)/10)*10,m1=ws1-c1,t1=m1*ba*3;
+  const lb2=Math.round(lb*.7),c2=mt+lb2+fi+pk,ws2=Math.round(c2/(1-sm/2)/10)*10+30,rt2=Math.round(ws2/(1-sm)/10)*10,m2=ws2-c2,t2=m2*ba*3;
+  $('e1m').textContent=f(mt);$('e1l').textContent=f(lb);$('e1p').textContent=f(pk);$('e1c').textContent=f(c1);$('e1w').textContent=f(ws1);$('e1r').textContent=f(rt1);$('e1t').textContent=f(t1);
+  $('e2m').textContent=f(mt);$('e2l').textContent=f(lb2);$('e2f').textContent=f(fi);$('e2p').textContent=f(pk);$('e2c').textContent=f(c2);$('e2w').textContent=f(ws2);$('e2r').textContent=f(rt2);$('e2t').textContent=f(t2);
+};
+
+// AI FILTER
+document.querySelectorAll('#fc-cks input').forEach(cb=>cb.addEventListener('change',()=>{const n=document.querySelectorAll('#fc-cks input:checked').length;$('ckct').textContent=`(${n}/5)`;$('ckct').style.color=n===5?'var(--green)':n>=3?'var(--gold2)':'var(--red)';}));
+
+const runFilter=async()=>{
+  if(!D.ckey){alert('Add Claude API key in Settings.');nav('settings');return;}
+  const desc=$('fc-desc').value.trim();if(!desc){alert('Describe the candidate first.');return;}
+  const ch=document.querySelector('#fc-ch .rp.on')?.dataset.v||'Unknown';
+  const sig=$('fc-sig').value,beh=$('fc-beh').value;
+  const checks=document.querySelectorAll('#fc-cks input:checked').length;
+  $('thinking').classList.add('on');$('vbox').style.display='none';
+
+  const prompt=`You are the NBSV Decision Engine v4.0. Apply the 3-Question Filter.
+
+CANDIDATE:
+Source: ${ch} | Signal: ${sig||'—'}
+Description: ${desc}
+Egyptian Behavior Answer: ${beh||'NOT PROVIDED — flag and apply weak/missing penalty'}
+Market Check: ${checks}/5 platforms verified clean
+
+Q1 — Never Before Seen: ${checks>=5?'All 5 platforms clean':'Only '+checks+'/5 checked — flag if <5'}
+Q2 — AHA in 3 Seconds: Stranger picks it up unprompted, no label, no demo. 2 of 4 reactions needed: "How did no one think of this?" / "I need this now" / "I must show someone" / "Looks expensive but isn't". Egyptian behavior must name a SPECIFIC Egyptian daily moment — generic behavior = FAIL Q2.
+Q3 — Workshop Producible: Green-list only (MDF/plywood/acrylic/aluminum/fabric/foam/EVA/standard hardware). Zero electronics. Zero injection mold. Zero imported core. ≤6 steps. COGS ≤80 EGP standard / ≤120 EGP Semi-DIY.
+
+RESPOND EXACTLY:
+VERDICT: [PASS / FAIL / INVESTIGATE]
+KILLED AT: Q[1/2/3] — [one sentence reason] (FAIL only)
+
+Q1 ASSESSMENT: [1-2 sentences]
+Q2 ASSESSMENT: [2-3 sentences + evaluation of Egyptian behavior answer]
+Q3 ASSESSMENT: [2 sentences + COGS estimate]
+
+If PASS only:
+PRODUCTION PATH: [Standard/Semi-DIY/Either] — reason
+TIMING: [Continuous demand / Season-amplified: name]
+NEXT STEP: [exact action in 7-step cycle]
+
+Be ruthless. Most candidates fail. Weak pass is worse than fail.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':D.ckey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:650,messages:[{role:'user',content:prompt}]})});
+    const d=await res.json();const txt=d.content?.[0]?.text||'No response.';
+    $('thinking').classList.remove('on');
+    const isP=txt.includes('VERDICT: PASS'),isF=txt.includes('VERDICT: FAIL');
+    const cls=isP?'pass':isF?'fail':'inv';
+    const vb=$('vbox');vb.className='vbox '+cls;vb.style.display='block';
+    $('vbadge').className='vbadge '+cls;$('vbadge').textContent=isP?'▲ PASS':isF?'▼ FAIL':'◆ INVESTIGATE';
+    $('vbody').textContent=txt;
+    $('v-add').style.display=isP?'inline-flex':'none';$('v-gh').style.display=D.connected?'inline-flex':'none';
+    window._lv={txt,ch,desc,sig,beh,isP,isF};
+  }catch(e){$('thinking').classList.remove('on');const vb=$('vbox');vb.className='vbox fail';vb.style.display='block';$('vbadge').className='vbadge fail';$('vbadge').textContent='⚠ ERROR';$('vbody').textContent='API error: '+(e.message||'Check API key.');}
+};
+const copyV=()=>navigator.clipboard.writeText($('vbody').textContent).then(()=>alert('Copied.'));
+const addFromV=()=>{if(!window._lv)return;openMo('nc');$('nc-ch').value=window._lv.ch;$('nc-st').value='Filter Pass';$('nc-no').value=window._lv.desc.slice(0,200);};
+const postToGH=async()=>{
+  const v=window._lv;if(!v||!D.connected){alert('Connect GitHub and run filter first.');return;}
+  const labels=['candidate',v.isP?'principle-3-pass':v.isF?'rejected':'pending-verification'];
+  const srcMap={'Asian Viral':'source-asian-viral','Concept Mine':'source-concept-mine','Concept Library':'source-concept-library','AI Ideation':'source-ai-ideation','GitHub Intel':'source-github-intel'};
+  const src=srcMap[v.ch];if(src)labels.push(src);
+  const i=await createIssue(`🎯 [CANDIDATE] ${v.desc.slice(0,55)}`,`## NBSV Filter Verdict\n\n**Source:** ${v.ch}\n**Signal:** ${v.sig||'—'}\n**Egyptian Behavior:** ${v.beh||'—'}\n\n**Description:**\n${v.desc}\n\n---\n\n## Filter Result\n\n${$('vbody').textContent}`,labels);
+  if(i)alert(`✓ Posted: Issue #${i.number}\n${i.html_url}`);else alert('Post failed. Check GitHub connection.');
+};
+
+// PATTERN ANALYSIS
+const analyzeP=async()=>{
+  if(!D.ckey){alert('Add Claude API key in Settings.');return;}
+  const all=allFails();const ctx=$('pat-ctx').value.trim();
+  const input=ctx||all.map(f=>`${f.name}|${f.kill}|${f.reason}`).join('\n');
+  if(!input){alert('No data to analyze.');return;}
+  const out=$('pat-out');out.style.display='block';out.textContent='Analyzing...';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':D.ckey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:320,messages:[{role:'user',content:`NBSV rejection pattern analysis. Direct, max 180 words:\n1) Dominant kill signal\n2) Source channel performance\n3) Stop scanning for:\n4) Scan more of:\n5) Filter application errors?\n\nData:\n${input}`}]})});
+    const d=await res.json();out.textContent=d.content?.[0]?.text||'No result.';
+  }catch(e){out.textContent='Error: '+e.message;}
+};
+
+// WORKSHOP BRIEF
+const genBrief=()=>{
+  const p=$('wb-p').value||'[Product]',d=$('wb-d').value||'[Describe job]',m=$('wb-m').value||'[Materials]';
+  const b=$('wb-b').value||'30',c=$('wb-c').value||'80',dl=$('wb-dl').value||'7';
+  const path=document.querySelector('#wb-path .rp.on')?.dataset.v||'Standard';
+  const steps=$('wb-s').value.split('\n').filter(s=>s.trim()).map((s,i)=>`${i+1}. ${s.trim()}`).join('\n');
+  $('brief-out').textContent=`Assalamu alaikum,\n\nNew order:\n• Job: ${d}\n• Material: ${m}\n• Batch: ${b} units\n• Path: ${path==='SemiDIY'?'Base structure only':'Complete product'}\n• Target: ≤${c} EGP/unit at ${b} units\n• Deadline: ${dl} days\n\n${steps?'Steps:\n'+steps+'\n\n':''}QC: WhatsApp photo of first 3 units before full batch approval.\n\nPlease confirm:\n□ Can you produce this?\n□ Price at ${b} units\n□ Timeline (days)\n□ Sample available?\n\nThank you`;
+};
+const copyBrief=()=>navigator.clipboard.writeText($('brief-out').textContent).then(()=>alert('Copied. Paste into WhatsApp.'));
+
+// INTEL
+const renderIntel=()=>{
+  const topics=[{n:'laser-cutting',u:'https://github.com/topics/laser-cutting'},{n:'flat-pack',u:'https://github.com/topics/flat-pack'},{n:'product-design',u:'https://github.com/topics/product-design'},{n:'open-design',u:'https://github.com/topics/open-design'},{n:'open-hardware',u:'https://github.com/topics/open-hardware'},{n:'fabrication',u:'https://github.com/topics/fabrication'},{n:'woodworking',u:'https://github.com/topics/woodworking'},{n:'cnc-router',u:'https://github.com/topics/cnc-router'}];
+  $('i-topics').innerHTML=topics.map(t=>`<div class="irow"><div style="flex:1"><div class="irow-nm">${t.n}</div></div><a href="${t.u}" target="_blank" class="btn bo bxs">Watch →</a></div>`).join('');
+
+  const queries=['"laser cut" "organizer" language:svg stars:>20','"dxf" "desk organizer" stars:>15','"flat pack" "wood" design files stars:>30','"product opportunity" analysis stars:>20','trending products scraper results 2026','github actions "github models" stars:>50'];
+  $('i-queries').innerHTML=queries.map(q=>`<div class="irow"><span style="flex:1;font-family:var(--m);font-size:9.5px;color:var(--t3)">${q}</span><a href="https://github.com/search?q=${encodeURIComponent(q)}" target="_blank" class="btn bo bxs">Search</a></div>`).join('');
+
+  const ai=[{n:'Claude (claude.ai)',d:'Primary filter, ideation, briefs — this project',u:'https://claude.ai'},{n:'Qwen (qwen.ai)',d:'Chinese manufacturing context, second opinion',u:'https://qwen.ai'},{n:'Perplexity',d:'Real-time: what\'s trending on Douyin now',u:'https://perplexity.ai'},{n:'NotebookLM',d:'Feed failure log + behaviors → monthly patterns',u:'https://notebooklm.google'},{n:'GitHub Models Marketplace',d:'GPT-4o · GPT-4o-mini · Mistral-large · Llama — free',u:'https://github.com/marketplace/models'},{n:'Copilot Workspace',d:'Agentic multi-file repo editing via Issues',u:'https://github.com/features/copilot/workspace'}];
+  $('i-ai').innerHTML=ai.map(t=>`<div class="irow"><div style="flex:1"><div class="irow-nm">${t.n}</div><div class="irow-dc">${t.d}</div></div><a href="${t.u}" target="_blank" class="btn bo bxs">Open</a></div>`).join('');
+
+  // v5.0: Model routing table
+  const mr=[
+    {agent:'Scouts (Reddit/RSS/KS)',model:'gpt-4o-mini',reason:'High volume binary triage'},
+    {agent:'Gap Sentinel Q1',model:'gpt-4o',reason:'Nuanced market presence reasoning'},
+    {agent:'Orchestrator filter',model:'gpt-4o',reason:'Full 3-question + AHA evaluation'},
+    {agent:'Brief Forge',model:'Mistral-large',reason:'Manufacturing vocabulary'},
+    {agent:'Pattern Brain',model:'gpt-4o',reason:'Synthesis + config update PR'},
+  ];
+  const mrel=$('i-model-routing');
+  if(mrel)mrel.innerHTML=mr.map(r=>`<div class="irow"><div style="flex:1"><div class="irow-nm" style="font-size:10.5px">${r.agent}</div><div class="irow-dc">${r.reason}</div></div><span style="font-family:var(--m);font-size:9px;color:var(--gold2);white-space:nowrap;flex-shrink:0;padding-left:8px">${r.model}</span></div>`).join('');
+};
+
+// SETTINGS
+const saveCK=()=>{D.ckey=$('s-ck').value.trim();save();$('ck-st').textContent=D.ckey?'✓ Key saved.':'Cleared.';$('ck-st').style.color=D.ckey?'var(--green)':'var(--t3)';};
+const testCK=async()=>{
+  const key=$('s-ck').value.trim()||D.ckey;if(!key){alert('Enter API key first.');return;}
+  $('ck-st').textContent='Testing...';
+  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:10,messages:[{role:'user',content:'OK'}]})});const ok=r.status===200;$('ck-st').textContent=ok?'✓ Connected.':'✗ Failed: '+r.status;$('ck-st').style.color=ok?'var(--green)':'var(--red)';}
+  catch(e){$('ck-st').textContent='✗ Error: '+e.message;$('ck-st').style.color='var(--red)';}
+};
+const renderSettings=()=>{$('s-pat').value=D.gpat||'';$('s-repo').value=D.grepo||'';$('s-ck').value=D.ckey||'';$('d-ct').textContent=D.cands.length+' candidates, '+D.fails.length+' failures';if(D.gpat&&D.grepo){$('gh-st').textContent=D.connected?`✓ Connected: ${D.grepo}`:'Saved — click Sync to verify';$('gh-st').style.color=D.connected?'var(--green)':'var(--t2)';}};
+
+const exportD=()=>{const b=new Blob([JSON.stringify({candidates:D.cands,failures:D.fails,exported:new Date().toISOString()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='nbsv-'+new Date().toISOString().slice(0,10)+'.json';a.click();};
+const importD=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.candidates)D.cands=d.candidates;if(d.failures)D.fails=d.failures;save();renderOV();alert('Imported.');}catch{alert('Invalid JSON.');}};r.readAsText(f);};i.click();};
+const clearD=()=>{if(!confirm('Clear all local data?'))return;D.cands=[];D.fails=[];save();renderOV();};
+
+// MODALS
+const openMo=n=>document.getElementById('mo-'+n)?.classList.add('on');
+const closeMo=n=>document.getElementById('mo-'+n)?.classList.remove('on');
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
+document.querySelectorAll('.rg').forEach(g=>g.querySelectorAll('.rp').forEach(p=>p.addEventListener('click',()=>{g.querySelectorAll('.rp').forEach(x=>x.classList.remove('on'));p.classList.add('on');})));
+
+// SAVE HANDLERS
+const saveC=()=>{
+  const n=$('nc-n').value.trim();if(!n){alert('Name required.');return;}
+  D.cands.push({id:uid(),name:n,channel:$('nc-ch').value,status:$('nc-st').value,behavior:$('nc-beh').value,path:$('nc-pa').value,season:$('nc-se').value,shops:+$('nc-sh').value||0,notes:$('nc-no').value,created:new Date().toLocaleDateString('en-GB'),_src:'local'});
+  save();closeMo('nc');renderOV();renderKanban();renderCands();
+};
+const saveF=()=>{
+  const n=$('nf-n').value.trim();if(!n){alert('Name required.');return;}
+  D.fails.push({id:uid(),name:n,channel:$('nf-ch').value,kill:$('nf-k').value,reason:$('nf-r').value,date:new Date().toLocaleDateString('en-GB'),_src:'local'});
+  save();closeMo('nf');renderFails();renderOV();
+};
+
+// BADGES + INIT
+const badges=()=>{const ac=allCands();$('b-pipe').textContent=ac.filter(c=>!['Closed-Won','Closed-Lost'].includes(c.status)).length;$('b-fail').textContent=allFails().length;};
+$('tb-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+ec();renderOV();nav('overview');
+if(D.gpat&&D.grepo){ghPill(false);setTimeout(syncGH,600);}
+</script>
+</body>
+</html>

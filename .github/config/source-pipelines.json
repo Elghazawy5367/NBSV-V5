@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "version": "1.0",
+    "aligned_with": "NBSV_MASTER_KB_v4.0 Part 3 + Part 9",
+    "description": "Timing windows, signal thresholds, and competitive dynamics per source channel. The filter does not change per channel — the standard never does. This file captures what makes each channel distinct operationally."
+  },
+
+  "channels": {
+
+    "asian_viral": {
+      "label": "Asian Viral Platforms",
+      "platforms": ["Douyin", "Xiaohongshu", "1688", "Taobao", "Korean platforms (Naver / Coupang)"],
+      "signal_type": "Mass emotional response at scale — millions stopped scrolling",
+      "egypt_pipeline_weeks": { "open": 4, "close": 14 },
+      "description": "Product went viral with a real Chinese or Korean audience before any import or awareness reached Egypt. The like count proves AHA. The 1688 supplier count proves manufacturing demand.",
+
+      "chinese_timing_clock": {
+        "description": "Use 1688 supplier count as the timing signal for Chinese-origin candidates",
+        "thresholds": [
+          { "count": "1–2", "status": "TOO_EARLY", "action": "Hold. Monitor weekly. Manufacturing demand not confirmed." },
+          { "count": "3–8", "status": "PROCEED", "action": "Sweet spot. Window open. Act with urgency." },
+          { "count": "10–19", "status": "LATE", "action": "Check AliExpress English listings immediately. Still possible but urgent." },
+          { "count": "20+", "status": "ABORT", "action": "Import wave starting. Do not proceed." }
+        ]
+      },
+
+      "korean_advantage": {
+        "pipeline_months": "8–14 months Korea to Egypt",
+        "wtp_premium": "20–30% higher for products reading as Korean-origin with Egyptian youth 15–28",
+        "competition": "Near zero — almost no other Egyptian scanner watches Korean domestic platforms"
+      },
+
+      "verification_sequence": [
+        "Screenshot immediately when you stop scrolling",
+        "Check 1688 supplier count (Chinese) or Coupang rank movement (Korean)",
+        "Run 5-platform Egyptian market check",
+        "If all clean — advance to filter"
+      ]
+    },
+
+    "concept_mines": {
+      "label": "Validated Concept Mines (Crowdfunding)",
+      "platforms": ["Kickstarter", "Indiegogo (InDemand)", "Makuake", "Green Funding", "Campfire"],
+      "signal_type": "Strangers paid real money before the product existed — highest external demand proof",
+      "egypt_pipeline_months": { "open": 6, "close": 18 },
+      "description": "Financial commitment from real buyers is a stronger AHA signal than any like count. The product often never reaches Egypt at all — Kickstarter campaigns frequently have no Middle East distribution.",
+
+      "signal_thresholds": {
+        "kickstarter_minimum": 500,
+        "makuake_minimum": 1000,
+        "indiegogo_minimum": 500,
+        "note": "Higher bar for Indiegogo — flexible funding means campaigns reach goal without full demand validation"
+      },
+
+      "time_windows": [
+        { "status": "Live campaign, 500+ backers", "action": "Strongest signal. Proceed immediately. No supply exists anywhere on earth." },
+        { "status": "Funded, shipping to backers (6–18 months ago)", "action": "Strong signal. Verify Egyptian market — often still clean." },
+        { "status": "Funded 1–3 years ago", "action": "Check Amazon and Egyptian market. May have reached mass distribution." },
+        { "status": "Funded 3+ years ago, no Amazon presence", "action": "Still viable. Verify carefully before committing." }
+      ],
+
+      "kill_signals_specific": [
+        "Raised $1M+ AND featured in Wired/TechCrunch/Verge — likely heading to mass market",
+        "Core innovation is patented mechanism — cannot replicate",
+        "Already on Amazon with 1,000+ reviews — window closed"
+      ]
+    },
+
+    "concept_libraries": {
+      "label": "Concept Libraries",
+      "platforms": ["Yanko Design", "Core77", "Dezeen", "Behance", "Coroflot", "Reddit r/somebodymakethis", "Pinterest", "Product Hunt (Hardware)"],
+      "signal_type": "Designed or desired but never manufactured — designer or user validated the AHA",
+      "egypt_pipeline": "Unlimited — product may never be manufactured anywhere. You are first manufacturer on earth.",
+      "description": "No external demand proven by money — AHA comes from your judgment and the design community's engagement. The pre-sell step is more critical here. Products that pass filter AND pre-sell here face zero global competition.",
+
+      "signal_by_platform": {
+        "yanko_core77": "Engagement (saves, comments, shares) from design community = AHA validated by people who make things",
+        "behance": "1,000+ appreciations on a simple physical product design = widespread designer AHA",
+        "r_somebodymakethis": "500+ upvotes = global unmet need stated directly in plain language. Sort by Top All Time for highest-validated.",
+        "pinterest": "Same concept appearing in 50+ boards from different users = persistent visual desire that nobody has solved",
+        "github_design_files": "100+ stars on a design file = other makers found it valuable. Often ready-to-produce SVG/DXF."
+      },
+
+      "validation_burden": "Higher than other channels. AHA comes from your judgment, not from external financial commitment. Pre-sell step weight is maximum here."
+    },
+
+    "ai_ideation": {
+      "label": "AI Ideation",
+      "platforms": ["Claude (primary)", "Qwen", "Perplexity", "ChatGPT", "Gemini", "Google NotebookLM"],
+      "signal_type": "Originated — no external reference anywhere on earth",
+      "egypt_pipeline": "None. You set the clock entirely.",
+      "description": "The product does not exist anywhere. No AliExpress listing coming. No import wave. The copycat must reverse-engineer your physical product — not a 1688 schematic shared with 40 competitors simultaneously.",
+
+      "competitive_dynamics": {
+        "timing_advantage": "Unlimited — no closing window",
+        "copycat_source": "Your physical product only — not a global schematic",
+        "defense": "Iteration speed — evolve product faster than they can copy it",
+        "validation_weight": "Pre-sell step is the ONLY validation. No external signal exists. 2 shop deposits = confirmation."
+      },
+
+      "ai_tool_matrix": {
+        "claude": "Primary. Full constraint set embedded. Egyptian market knowledge. No re-explaining needed.",
+        "qwen": "Second opinion. Stronger Chinese manufacturing context. Cross-reference with Claude.",
+        "perplexity": "Real-time web signal. Use for: what's trending on Douyin now / top r/somebodymakethis posts this month.",
+        "chatgpt": "Third opinion. Run same prompt, compare outputs. Convergence = stronger signal.",
+        "gemini": "Search gap signal. What do people search for in [category] but cannot find?",
+        "notebooklm": "Pattern recognition ONLY. Feed failure log. Ask what product type to stop scanning."
+      },
+
+      "prompt_rule": "The tighter the buyer description and pain description — the better the output. 'Cairo mother of 3 in 75sqm managing 3 school bags at the entrance' beats 'Egyptian mother' entirely."
+    },
+
+    "github_intelligence": {
+      "label": "GitHub Intelligence Layer",
+      "signal_type": "Design files, research repos, awesome lists, trend analysis outputs",
+      "egypt_pipeline": "Unlimited — no manufacturing exists, often no commercial interest anywhere",
+      "description": "Every public repository is readable in a browser with no account or technical knowledge. GitHub is an intelligence layer containing design files ready for Egyptian workshop production, product research nobody else is reading, and curated lists of scanning sources.",
+
+      "primary_uses": [
+        {
+          "use": "Design files (SVG / DXF)",
+          "search": "\"laser cut\" \"design files\" \"organizer\" stars:>30",
+          "value": "Ready-to-produce files. Hand to Egyptian laser cutting workshop same day."
+        },
+        {
+          "use": "Awesome Lists",
+          "search": "awesome product design / awesome industrial design / awesome laser cutting",
+          "value": "Community-curated directories of every scanning platform you haven't found yet"
+        },
+        {
+          "use": "Trend data outputs",
+          "search": "trending products scraper results / aliexpress trending products list",
+          "value": "Read the output files — no code needed. Products you may not have seen on Douyin."
+        },
+        {
+          "use": "Product research repos",
+          "search": "\"product opportunity\" \"market research\" stars:>10",
+          "value": "Researchers publish gap analyses. You have the manufacturing path they don't."
+        }
+      ],
+
+      "star_signal": {
+        "100_plus": "Designer-validated — hundreds of people found it valuable",
+        "50_plus": "Good signal — worth deeper review",
+        "under_50": "Lower signal — apply extra scrutiny"
+      },
+
+      "search_operators": {
+        "stars": "stars:>N — only repos with more than N stars",
+        "language": "language:markdown — only repos where main files are docs/lists",
+        "pushed": "pushed:>YYYY-MM-DD — only recently updated repos",
+        "combined_example": "\"product design\" language:markdown stars:>50 pushed:>2025-01-01"
+      }
+    }
+  },
+
+  "source_hierarchy": {
+    "description": "Signal confidence ranking. The pre-sell deposit from 2+ shop owners equates all sources — this ranking guides where to focus scanning time, not which candidates to advance.",
+    "ranked": [
+      { "rank": 1, "source": "Kickstarter live, 500+ backers", "reason": "Strangers paid real money before product existed" },
+      { "rank": 2, "source": "Douyin 1M+ likes + 3–8 suppliers on 1688", "reason": "Mass emotional response + manufacturing demand confirmed" },
+      { "rank": 3, "source": "r/somebodymakethis 500+ upvotes", "reason": "Global unmet need stated directly in plain language" },
+      { "rank": 4, "source": "Yanko / Core77 high engagement", "reason": "Designer-validated AHA, never reached manufacturing" },
+      { "rank": 5, "source": "AI ideation — constrained prompt", "reason": "No external validation — pre-sell is the only confirmation" },
+      { "rank": 6, "source": "Korean platforms 1,000+ reviews", "reason": "Proven demand in Korean market — needs Egyptian fit check" },
+      { "rank": 7, "source": "GitHub design files 100+ stars", "reason": "Designer-validated, producible immediately if concept fits" }
+    ],
+    "equalizer": "The pre-sell deposit from 2+ shop owners overrides every rank. A rank-5 AI ideation candidate with 2 deposits beats a rank-1 Kickstarter candidate with 0 deposits."
+  }
+}

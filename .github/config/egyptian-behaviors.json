@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "version": "1.0",
+    "aligned_with": "NBSV_MASTER_KB_v4.0",
+    "description": "Structured Egyptian daily behaviors for cultural fit validation during the AHA check (Question 2). These are EXAMPLES — not an exhaustive list. Use as prompts to sharpen your Egyptian behavior answer. A product must name a specific behavior from Egyptian daily life, not a generic universal one.",
+    "usage": "When evaluating Question 2, ask: does this product replace or enhance any of these? A strong specific answer beats a weak general one every time."
+  },
+
+  "small_space_storage": {
+    "label": "Small Space Storage",
+    "cairo_reality": "Average apartment 60–90 sqm. Families of 4–5 people. No dedicated storage rooms.",
+    "specific_behaviors": [
+      "Sorting 3 children's school bags, sports bags, and cleaning supplies at the apartment entrance every morning",
+      "Stacking pots and pans in a kitchen with no overhead storage",
+      "Managing 4+ people's shoes at a single entrance with no shoe rack space",
+      "Folding and storing prayer rugs in a living room with no dedicated shelf",
+      "Managing cleaning supplies — mop, broom, vacuum — in an apartment with no utility room",
+      "Sorting children's stationery across 3 school subjects on one shared bedroom desk",
+      "Storing Ramadan decorations 11 months of the year with no attic or garage"
+    ]
+  },
+
+  "gifting": {
+    "label": "Gifting Systems",
+    "cairo_reality": "15–25 mandatory gifting occasions per year. Eid visits, weddings, births, graduations, sick visits, Ramadan hospitality, new home visits.",
+    "specific_behaviors": [
+      "Arriving at an Eid visit with a gift that looks presentable without wrapping paper or boxes",
+      "Giving 10–15 identical Eid gifts to extended family that look thoughtful despite the volume",
+      "Buying a wedding gift that signals generosity within a household budget",
+      "Preparing a gift for a new mother visit that doesn't require assembly or explanation",
+      "Giving a hostess gift for a Ramadan dinner that can be presented on arrival without unwrapping",
+      "Sending Eid gifts to relatives in other cities that survive transit without looking battered",
+      "Presenting a gift for a new apartment that implies quality without a premium price tag"
+    ]
+  },
+
+  "car_culture": {
+    "label": "Car Organizers",
+    "cairo_reality": "2–4 hours daily in vehicles. Car is a mobile office, storage unit, and waiting room.",
+    "specific_behaviors": [
+      "Managing phone charging cables, sunglasses, car registration papers, tissues, and water bottles creating dashboard chaos",
+      "Storing children's snacks, games, and bottles for school drop-off and pickup runs",
+      "Keeping parking receipts, petrol receipts, and papers accessible without chaos in the glove box",
+      "Managing a prayer beads, air freshener, and sunscreen on the dashboard without sliding",
+      "Organizing the back seat for children during the school run — bags, water, snacks",
+      "Keeping a clean car interior visible to passengers given Egyptian hosting culture extends to vehicles"
+    ]
+  },
+
+  "desk_study": {
+    "label": "Desk and Study Organization",
+    "cairo_reality": "Remote work growth. University students studying from home. Children doing homework. All sharing small multi-purpose desks.",
+    "specific_behaviors": [
+      "Managing textbooks, notebooks, colored pencils, ruler sets for 3 school subjects on one shared desk",
+      "Keeping a phone charger, water bottle, and snacks accessible on a desk without taking up workspace",
+      "Organizing revision notes for a university exam when the only study space is a bedroom desk",
+      "Managing work-from-home laptop, notebook, pens, and coffee on an apartment dining table that is also the family table",
+      "Keeping a child's homework station ready every afternoon in a bedroom shared with a sibling"
+    ]
+  },
+
+  "children_education": {
+    "label": "Children's Educational Tools",
+    "cairo_reality": "Education is the top household spending priority. Parents invest significantly in anything that signals educational support.",
+    "specific_behaviors": [
+      "Organizing a child's revision schedule across 10+ school subjects before exams",
+      "Managing educational flashcards, activity books, and learning games in a small children's room",
+      "Keeping school stationery — pens, rulers, scissors, glue — accessible but organized in a shared bedroom",
+      "Displaying a child's achievements (certificates, artwork) in a small apartment with limited wall space",
+      "Managing a child's reading books when the apartment has no dedicated reading corner"
+    ]
+  },
+
+  "hosting_and_ramadan": {
+    "label": "Ramadan and Eid Hosting",
+    "cairo_reality": "Ramadan = highest intensity Egyptian consumer behavior. Hosting guests is a regular obligation with strong presentation expectations.",
+    "specific_behaviors": [
+      "Setting the iftar table for 10–15 guests daily during Ramadan with limited counter space",
+      "Displaying Ramadan decorations — lanterns, lights, crescent — in a small apartment with no storage for 11 months",
+      "Organizing dates, nuts, and sweets for iftar presentation in a way that looks abundant and generous",
+      "Preparing Eid morning sweets and cookies for visiting guests who arrive from early morning",
+      "Managing Ramadan serving dishes, trays, and serving sets that are used once a year and stored 11 months"
+    ]
+  },
+
+  "validation_rules": {
+    "strong_answer": "Names a specific behavioral moment with real Egyptian context — apartment size, traffic, hosting obligation, education investment, gifting culture",
+    "weak_answer_examples": [
+      "People like organization",
+      "Useful for storage",
+      "Good for gifts",
+      "Kids need educational tools",
+      "People in cars need organizers"
+    ],
+    "rejection_rule": "If the behavior description could apply equally to any country — reject. The answer must be specific to Egypt's physical, social, or cultural reality."
+  }
+}

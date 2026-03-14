@@ -1,0 +1,248 @@
+name: 🕵️ GitHub Intelligence Agent — Auto-Scan Design Repos
+
+# The scout. Searches GitHub's code search and repo search APIs every week
+# for new DXF/SVG design files, laser cutting repos, and product design repos
+# that could contain NBSV-producible designs. Posts discoveries as candidate issues.
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'   # Every Sunday 06:00 UTC = 08:00 Egypt
+  workflow_dispatch:
+    inputs:
+      search_mode:
+        description: 'Search focus'
+        type: choice
+        options:
+          - all
+          - dxf-files
+          - laser-cut-designs
+          - product-concepts
+          - trending-repos
+
+permissions:
+  issues: write
+  contents: read
+  models: read
+
+jobs:
+  scan-github-for-designs:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Search GitHub for new DXF and laser cut design repos
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const mode = '${{ github.event.inputs.search_mode }}' || 'all';
+
+            // ── Define search queries ──────────────────────────────────────
+            const searches = [
+              // DXF files — directly producible at Egyptian laser workshops
+              {
+                query: 'organizer dxf laser cut stars:>20 pushed:>2025-01-01',
+                type: 'repositories',
+                category: 'DXF Design File',
+                signal: 'GitHub repo with DXF files and 20+ stars',
+              },
+              {
+                query: 'storage tray laser cut svg dxf stars:>15 pushed:>2025-01-01',
+                type: 'repositories',
+                category: 'Laser Cut Storage',
+                signal: 'GitHub repo with storage/organizer laser files',
+              },
+              {
+                query: 'flat pack furniture cnc files stars:>30 pushed:>2025-01-01',
+                type: 'repositories',
+                category: 'Flat-Pack Design',
+                signal: 'GitHub flat-pack furniture with production files',
+              },
+              // Concept repos — designed but never manufactured
+              {
+                query: 'product design concept open source stars:>50 pushed:>2025-06-01',
+                type: 'repositories',
+                category: 'Open Product Concept',
+                signal: 'GitHub product design with 50+ stars, recently updated',
+              },
+              // Reddit aggregators published as data
+              {
+                query: 'somebodymakethis top posts aggregated stars:>10',
+                type: 'repositories',
+                category: 'Reddit Unmet Needs',
+                signal: 'r/somebodymakethis aggregated top posts',
+              },
+            ];
+
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+            let totalDiscovered = 0;
+            const discoveries = [];
+
+            for (const search of searches) {
+              if (mode !== 'all' && !search.category.toLowerCase().includes(mode.replace(/-/g, ' ').slice(0, 6))) continue;
+
+              try {
+                const result = await github.rest.search.repos({
+                  q: search.query,
+                  sort: 'updated',
+                  order: 'desc',
+                  per_page: 5,
+                });
+
+                for (const repo of result.data.items) {
+                  // Skip already-seen repos (check if we have an issue for this repo)
+                  const repoUrl = repo.html_url;
+                  const updatedAt = new Date(repo.updated_at);
+                  const isNew = updatedAt > sevenDaysAgo;
+
+                  discoveries.push({
+                    name: repo.full_name,
+                    url: repoUrl,
+                    stars: repo.stargazers_count,
+                    description: repo.description || 'No description',
+                    updated: repo.updated_at.slice(0, 10),
+                    topics: (repo.topics || []).join(', '),
+                    category: search.category,
+                    signal: search.signal,
+                    isNew,
+                  });
+                }
+
+                // Rate limit protection
+                await new Promise(r => setTimeout(r, 1000));
+              } catch(e) {
+                console.log(`Search error for "${search.query}": ${e.message}`);
+              }
+            }
+
+            if (discoveries.length === 0) {
+              console.log('No new repositories found this week.');
+              return;
+            }
+
+            // ── AI analysis of discoveries ─────────────────────────────────
+            const discoveryList = discoveries.slice(0, 10).map((d, i) =>
+              `${i+1}. [${d.category}] ${d.name} (⭐${d.stars}) — ${d.description} — Topics: ${d.topics || 'none'}`
+            ).join('\n');
+
+            let aiAnalysis = '';
+            try {
+              const r = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GITHUB_TOKEN}` },
+                body: JSON.stringify({
+                  model: 'gpt-4o-mini',
+                  messages: [{
+                    role: 'user',
+                    content: `You are the NBSV system. Review these GitHub repos found this week. 
+For Egyptian micro-manufacturing: products must be AHA in 3 seconds, producible in MDF/acrylic/aluminum/fabric/foam (no electronics, no injection mold), COGS ≤80 EGP.
+
+REPOS FOUND:
+${discoveryList}
+
+For each repo score: HIGH / MEDIUM / LOW potential. One sentence per repo explaining why.
+Then identify the TOP 1-2 repos to investigate further. Max 200 words total.`
+                  }],
+                  max_tokens: 300,
+                  temperature: 0.2,
+                }),
+              });
+              if (r.ok) aiAnalysis = (await r.json()).choices?.[0]?.message?.content || '';
+            } catch(e) { aiAnalysis = `AI scoring unavailable: ${e.message}`; }
+
+            // ── Build the weekly intelligence issue ─────────────────────────
+            const newRepos = discoveries.filter(d => d.isNew);
+            const repoTable = discoveries.slice(0, 12).map(d =>
+              `| ${d.isNew ? '🆕' : '📁'} [${d.name}](${d.url}) | ${d.category} | ⭐${d.stars} | ${d.updated} |`
+            ).join('\n');
+
+            const issueBody = `## 🕵️ GitHub Intelligence Report — Week of ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}
+
+**Repos scanned:** ${searches.length} queries × top 5 results
+**New this week:** ${newRepos.length} repos updated in last 7 days
+
+---
+
+## AI Scoring
+
+${aiAnalysis}
+
+---
+
+## Full Discovery Table
+
+| Repo | Category | Stars | Updated |
+|---|---|---|---|
+${repoTable}
+
+---
+
+## Action Required
+
+For each HIGH/MEDIUM repo above:
+1. Click the repo link — look for \`.dxf\`, \`.svg\`, or design concept files
+2. Download any promising file → send to workshop for COGS quote
+3. If a product concept (no file): run through NBSV 3-question filter
+4. Open a [New Candidate Issue](../issues/new?template=candidate-scan.yml) for any that pass initial review
+
+---
+
+### GitHub Code Search (run manually)
+These searches find actual design FILES, not just repos:
+
+\`\`\`
+https://github.com/search?q=organizer+extension%3Adxf&type=code
+https://github.com/search?q=tray+storage+extension%3Asvg+laser&type=code
+https://github.com/search?q=desk+organizer+extension%3Adxf+stars%3A%3E10&type=code
+\`\`\`
+
+---
+*GitHub Intelligence Agent — Runs every Sunday — NBSV v4.0*
+*Searches: ${searches.map(s => s.category).join(' · ')}*`;
+
+            // Create weekly intelligence issue
+            const { data: created } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🕵️ GitHub Intel — ${discoveries.length} repos scanned — Week ${new Date().toLocaleDateString('en-GB')}`,
+              body: issueBody,
+              labels: ['github-intelligence', 'weekly-scan'],
+            });
+
+            console.log(`✓ GitHub Intelligence Report posted: Issue #${created.number}`);
+            console.log(`  Total repos discovered: ${discoveries.length}`);
+            console.log(`  New this week: ${newRepos.length}`);
+
+  # ── Scan GitHub trending topics ───────────────────────────────────────────
+  scan-trending-topics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check GitHub trending for design/product repos
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            // Search for recently-trending design repos
+            const trendingSearches = [
+              'topic:laser-cutting pushed:>2025-10-01 stars:>30',
+              'topic:product-design pushed:>2025-10-01 stars:>50',
+              'topic:open-hardware pushed:>2025-10-01 stars:>40',
+              'topic:woodworking pushed:>2025-10-01 stars:>25',
+            ];
+
+            const results = [];
+            for (const q of trendingSearches) {
+              try {
+                const r = await github.rest.search.repos({ q, sort: 'stars', order: 'desc', per_page: 3 });
+                results.push(...r.data.items);
+                await new Promise(r => setTimeout(r, 800));
+              } catch(e) { console.log(`Trending search error: ${e.message}`); }
+            }
+
+            if (results.length) {
+              const unique = [...new Map(results.map(r => [r.id, r])).values()];
+              console.log(`Trending repos found: ${unique.length}`);
+              unique.forEach(r => console.log(`  ⭐${r.stargazers_count} ${r.full_name} — ${r.description?.slice(0,60)}`));
+            }

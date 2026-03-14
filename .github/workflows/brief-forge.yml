@@ -1,0 +1,200 @@
+name: ⚙️ Brief Forge — Auto Workshop Spec Generator
+
+# UPGRADE (v5.0):
+# Model switched from gpt-4o → Mistral-large for workshop brief generation.
+# Mistral-large has stronger manufacturing vocabulary and material sourcing context.
+# GPT-4o remains for AHA evaluation (Orchestrator). Mistral for production specs.
+# This is multi-model routing: right model for each task type.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+  models: read
+
+jobs:
+  generate-workshop-brief:
+    if: github.event.label.name == 'principle-3-pass'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate workshop brief with Mistral-large
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const title = issue.title;
+            const labels = issue.labels.map(l => l.name);
+
+            const isSemiDiy = labels.includes('semi-diy');
+            const source = labels.find(l => l.startsWith('source-'))?.replace('source-','') || 'unknown';
+            const isScout = title.includes('[SCOUT-') || labels.some(l => l.startsWith('scout-'));
+
+            // Extract fields from issue body
+            const extract = (fieldLabel) => {
+              const patterns = [
+                new RegExp(`###\\s*${fieldLabel}[\\s\\S]*?\\n+([\\s\\S]+?)(?=\\n###|$)`, 'i'),
+              ];
+              for (const p of patterns) {
+                const m = body.match(p);
+                if (m && m[1].trim().length > 5) return m[1].trim().slice(0, 600);
+              }
+              return '';
+            };
+
+            const productName = extract('Product Name') || title.replace(/^[🎯◈▣⚙️◻]\s*\[.*?\]\s*/, '').trim();
+            const whatYouSaw = extract('What You Saw') || extract('What You Saw — Describe It') || '';
+            const egyptianBehavior = extract('Egyptian Behavior Answer') || '';
+            const cogsEstimate = extract('COGS Estimate') || '';
+            const productionPath = isSemiDiy ? 'Semi-DIY' : 'Standard';
+
+            // ── Call GitHub Models: Mistral-large for workshop brief ──────
+            // Mistral-large selected for manufacturing vocabulary strength.
+            const briefPrompt = `You are the NBSV Brief Forge. Generate a production-ready workshop brief for an Egyptian micro-manufacturing business.
+
+PRODUCT: ${productName}
+DESCRIPTION: ${whatYouSaw.slice(0, 500)}
+EGYPTIAN USE CASE: ${egyptianBehavior.slice(0, 200)}
+PRODUCTION PATH: ${productionPath}
+SOURCE: ${source}
+FOUNDER COGS ESTIMATE: ${cogsEstimate || 'Not provided'}
+
+PRODUCTION RULES (NON-NEGOTIABLE):
+- Materials: MDF / plywood / solid wood / acrylic / aluminum sheet / standard fabric / foam / EVA / standard hardware ONLY
+- Zero electronics of any kind
+- Zero injection molding
+- Zero imported core components  
+- Maximum 6 assembly steps
+- Workshop produces in 1–2 days
+- COGS target: ≤${isSemiDiy ? '120' : '80'} EGP at batch 30
+${isSemiDiy ? '- Base structure from workshop; founder adds finish (sanding, staining, felt, hardware, paint) — max 20 min/unit' : ''}
+
+Generate in this exact structure:
+
+## WORKSHOP BRIEF (WhatsApp message — copy-paste ready)
+
+[Write a WhatsApp message in English that a workshop owner would understand immediately. Include: what to make, materials, batch size, target unit cost, maximum 6 numbered assembly steps, QC instruction (first 3 units photo via WhatsApp before full batch), timeline request. Never mention what you're selling or where. Never mention profit margins.]
+
+---
+
+## COGS ESTIMATE TABLE
+
+| Item | Cost per unit (EGP) |
+|---|---|
+| Materials | X |
+| Labor | X |
+${isSemiDiy ? '| Finish materials (founder) | X |\n' : ''}| Packaging | X |
+| **Total COGS** | **X** |
+| Wholesale target | X |
+| Retail target | X |
+| Margin at wholesale | X% |
+
+---
+
+## PRE-SELL SCRIPT (what to say to shop owners)
+
+[Write the exact words to say when showing the video/prototype to a shop owner. Max 3 sentences. Include: views/backer count signal, "nobody in Egypt has seen it", exclusive offer for their area. Never describe the product — the video does that.]
+
+---
+
+## PRODUCTION RISKS
+
+[2-3 bullet points: material sourcing risks, complexity risks, QC watchpoints. Be specific to this product.]`;
+
+            let briefContent = '*(Brief Forge: GitHub Models call failed — retry by removing and re-adding `principle-3-pass` label)*';
+
+            try {
+              // Use Mistral-large for manufacturing context
+              const aiRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                },
+                body: JSON.stringify({
+                  model: 'Mistral-large',
+                  messages: [{ role: 'user', content: briefPrompt }],
+                  max_tokens: 900,
+                  temperature: 0.3,
+                }),
+              });
+
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                briefContent = aiData.choices?.[0]?.message?.content || 'No content returned.';
+                console.log('✓ Mistral-large brief generated successfully');
+              } else {
+                // Fallback to gpt-4o if Mistral unavailable
+                console.log(`Mistral-large unavailable (${aiRes.status}), falling back to gpt-4o...`);
+                const fallbackRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                  },
+                  body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [{ role: 'user', content: briefPrompt }],
+                    max_tokens: 900,
+                    temperature: 0.3,
+                  }),
+                });
+                if (fallbackRes.ok) {
+                  const fallbackData = await fallbackRes.json();
+                  briefContent = fallbackData.choices?.[0]?.message?.content || 'No content.';
+                  briefContent = '> *Note: Generated with gpt-4o fallback (Mistral-large unavailable)*\n\n' + briefContent;
+                  console.log('✓ GPT-4o fallback brief generated');
+                }
+              }
+            } catch(e) {
+              briefContent = `*(Brief generation failed: ${e.message})*`;
+              console.log(`Brief Forge error: ${e.message}`);
+            }
+
+            // ── Post complete brief as issue comment ──────────────────────
+            const commentBody = `# ⚙️ Brief Forge — Workshop Production Brief
+*Auto-generated on ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+*Model: Mistral-large | Production path: ${productionPath}*${isScout ? ' | Source: Scout-discovered candidate' : ''}
+
+---
+
+${briefContent}
+
+---
+
+### Next Steps
+1. Copy the WhatsApp brief above → send to workshop
+2. Negotiate: confirm materials availability + timeline
+3. Use pre-sell script → show video to 3+ shop owners
+4. 2+ confirm with 50% deposit → add label \`pre-sell-confirmed\`
+5. Fewer than 2 confirm → add label \`presell-fail\` and close issue
+
+**RULE:** Never show workshop and shop owner the same information. Workshop knows what to make. Shop owner sees the video.
+
+---
+*Brief Forge v5.0 — Triggered by \`principle-3-pass\` label — NBSV v5.0*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: commentBody,
+            });
+
+            // Add brief-ready label
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['brief-ready'],
+              });
+            } catch(e) {}
+
+            console.log(`✓ Workshop brief posted for Issue #${issue.number}: "${title.slice(0,60)}"`);

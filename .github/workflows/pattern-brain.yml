@@ -1,0 +1,379 @@
+name: 🧠 Pattern Brain — Monthly Intelligence + Config Auto-Update
+
+# UPGRADE (v5.0):
+# Added Step 5: Config Auto-Update Loop.
+# Pattern Brain now reads closed-won and presell-stalled outcomes, proposes
+# weighted updates to egyptian-behaviors.json, and opens a Pull Request.
+# Founder approves in one click. Over 12 months, the config becomes a
+# self-improving Egyptian behavioral model built from actual sales data.
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'    # 1st of every month at 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  analyze-and-update:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run pattern analysis and generate config update
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const month = new Date().toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+            console.log(`🧠 Pattern Brain starting for ${month}...`);
+
+            // ── 1. Collect all outcome data ───────────────────────────────
+            const [rejectedRes, passedRes, closedWonRes, presellStalledRes] = await Promise.all([
+              github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, labels: 'rejected', state: 'all', per_page: 100 }),
+              github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, labels: 'principle-3-pass', state: 'all', per_page: 100 }),
+              github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, labels: 'closed-won', state: 'all', per_page: 100 }),
+              github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, labels: 'presell-stalled', state: 'all', per_page: 50 }),
+            ]);
+
+            const rejected = rejectedRes.data;
+            const passed = passedRes.data;
+            const closedWon = closedWonRes.data;
+            const presellStalled = presellStalledRes.data;
+
+            if (rejected.length === 0 && closedWon.length === 0) {
+              console.log('No outcome data yet. Pattern Brain waiting for first cycle.');
+              return;
+            }
+
+            // ── 2. Build frequency maps ───────────────────────────────────
+            const killMap = {};
+            const sourceFailMap = {};
+            const sourcePassMap = {};
+
+            rejected.forEach(issue => {
+              issue.labels.forEach(l => {
+                if (l.name.startsWith('fail-') || l.name.startsWith('on-') || l.name === 'presell-fail') {
+                  killMap[l.name] = (killMap[l.name] || 0) + 1;
+                }
+              });
+              const src = issue.labels.find(l => l.name.startsWith('source-'))?.name;
+              if (src) sourceFailMap[src] = (sourceFailMap[src] || 0) + 1;
+            });
+
+            passed.forEach(issue => {
+              const src = issue.labels.find(l => l.name.startsWith('source-'))?.name;
+              if (src) sourcePassMap[src] = (sourcePassMap[src] || 0) + 1;
+            });
+
+            const killSorted = Object.entries(killMap).sort((a,b) => b[1]-a[1]);
+
+            const failureSummary = rejected.slice(-30).map(i => {
+              const kills = i.labels.filter(l => l.name.startsWith('fail-') || l.name === 'presell-fail').map(l => l.name).join(', ');
+              const src = i.labels.find(l => l.name.startsWith('source-'))?.name || 'unknown';
+              return `#${i.number}: "${i.title.slice(0,60)}" | ${src} | ${kills || 'untagged'}`;
+            }).join('\n');
+
+            const wonSummary = closedWon.map(i => {
+              const src = i.labels.find(l => l.name.startsWith('source-'))?.name || 'unknown';
+              const path = i.labels.some(l => l.name === 'semi-diy') ? 'Semi-DIY' : 'Standard';
+              return `#${i.number}: "${i.title.slice(0,60)}" | ${src} | ${path}`;
+            }).join('\n') || 'None yet';
+
+            // ── 3. Read current egyptian-behaviors.json ───────────────────
+            let behaviorsContent = '';
+            let behaviorsJson = null;
+            try {
+              const { data: fileData } = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: '.github/config/egyptian-behaviors.json',
+              });
+              behaviorsContent = Buffer.from(fileData.content, 'base64').toString('utf8');
+              behaviorsJson = JSON.parse(behaviorsContent);
+              console.log('✓ egyptian-behaviors.json loaded');
+            } catch(e) {
+              console.log(`⚠ Could not load egyptian-behaviors.json: ${e.message}`);
+            }
+
+            // ── 4. Call GPT-4o for pattern analysis ───────────────────────
+            const analysisPrompt = `You are the NBSV Pattern Brain. Analyze failure and success patterns for an Egyptian micro-manufacturing fast-follower business.
+
+SYSTEM: Egyptian solo founder pre-sells locally-made products at zero capital risk. Products must: (1) Never been seen in Egypt, (2) AHA in 3 seconds, (3) Workshop producible, (4) Real Egyptian WTP.
+
+REJECTION DATA (last 30 rejections):
+${failureSummary || 'None yet'}
+
+KILL SIGNAL FREQUENCY:
+${killSorted.map(([k,v]) => `${k}: ${v}x`).join('\n') || 'None'}
+
+SOURCE CHANNEL PERFORMANCE:
+Failures: ${Object.entries(sourceFailMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
+Passes: ${Object.entries(sourcePassMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
+
+COMPLETED CYCLES (closed-won):
+${wonSummary}
+
+PRE-SELL STALLED (validated but not sold):
+${presellStalled.map(i => `#${i.number}: "${i.title.slice(0,50)}"`).join('\n') || 'None'}
+
+TOTAL STATS: ${rejected.length} rejected, ${passed.length} passed filter, ${closedWon.length} completed cycles
+Pass rate: ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}%
+
+Provide monthly intelligence brief:
+1. TOP 3 PATTERNS — dominant kill signals and root cause
+2. SOURCE CHANNEL RANKING — which channel produces best signal/noise ratio
+3. STOP SCANNING — specific product types wasting scan time
+4. SCAN MORE — what patterns in passed candidates should guide next month
+5. FILTER CALIBRATION — are any kill signals being missed early?
+6. NEXT MONTH FOCUS — specific recommendation (consider Egypt is now in March 2026, Ramadan just ended, Eid El Adha ~June)
+
+Direct, no padding. Max 450 words.`;
+
+            let aiAnalysis = '*(Pattern Brain: GitHub Models analysis unavailable)*';
+            try {
+              const aiRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GITHUB_TOKEN}` },
+                body: JSON.stringify({
+                  model: 'gpt-4o',
+                  messages: [{ role: 'user', content: analysisPrompt }],
+                  max_tokens: 700,
+                  temperature: 0.3,
+                }),
+              });
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                aiAnalysis = aiData.choices?.[0]?.message?.content || 'No analysis.';
+                console.log('✓ GPT-4o pattern analysis complete');
+              } else {
+                console.log(`GitHub Models error: ${aiRes.status}`);
+              }
+            } catch(e) { console.log(`Analysis error: ${e.message}`); }
+
+            // ── 5. Config auto-update: propose egyptian-behaviors.json PR ──
+            // Only runs if we have actual outcome data to learn from
+            let configUpdatePRNumber = null;
+            if (behaviorsJson && closedWon.length > 0) {
+
+              const configUpdatePrompt = `You are proposing updates to the NBSV egyptian-behaviors.json config file based on actual sales outcomes.
+
+CURRENT CONFIG CATEGORIES:
+${Object.entries(behaviorsJson).filter(([k]) => k !== 'meta' && k !== 'validation_rules').map(([k, v]) => `- ${k}: ${v.label}`).join('\n')}
+
+PRODUCTS THAT SOLD (closed-won):
+${wonSummary}
+
+PRODUCTS THAT PASSED FILTER BUT STALLED AT PRE-SELL:
+${presellStalled.map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
+
+PRODUCTS THAT FAILED CULTURAL FIT CHECK:
+${rejected.filter(i => i.labels.some(l => l.name.includes('cultural') || l.name.includes('behavior'))).map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
+
+TASK: Propose SPECIFIC updates to the egyptian-behaviors.json file based on what sold vs. what stalled.
+Focus on: (1) new specific Egyptian behavior examples to add, (2) categories to emphasize more, (3) weak behavior examples to remove.
+
+Respond ONLY in this JSON format (no other text):
+{
+  "proposed_additions": [
+    { "category": "existing_category_key", "new_behavior": "Specific Egyptian behavior example (one sentence)" }
+  ],
+  "emphasis_changes": [
+    { "category": "category_key", "insight": "Why this category is showing stronger/weaker signal" }
+  ],
+  "summary": "2 sentence summary of proposed changes and why"
+}
+
+If there is insufficient data to make confident recommendations, return: {"proposed_additions": [], "emphasis_changes": [], "summary": "Insufficient outcome data for config updates this month."}`;
+
+              try {
+                const configRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GITHUB_TOKEN}` },
+                  body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [{ role: 'user', content: configUpdatePrompt }],
+                    max_tokens: 600,
+                    temperature: 0.2,
+                  }),
+                });
+
+                if (configRes.ok) {
+                  const configData = await configRes.json();
+                  const rawConfig = configData.choices?.[0]?.message?.content || '';
+                  const cleanedConfig = rawConfig.replace(/```json|```/g, '').trim();
+                  const configProposal = JSON.parse(cleanedConfig);
+
+                  const hasChanges = configProposal.proposed_additions?.length > 0 || configProposal.emphasis_changes?.length > 0;
+
+                  if (hasChanges) {
+                    // Apply additions to behaviors JSON
+                    const updatedBehaviors = JSON.parse(behaviorsContent);
+
+                    for (const addition of (configProposal.proposed_additions || [])) {
+                      if (updatedBehaviors[addition.category]?.specific_behaviors) {
+                        updatedBehaviors[addition.category].specific_behaviors.push(addition.new_behavior);
+                      }
+                    }
+
+                    // Update meta version
+                    if (updatedBehaviors.meta) {
+                      const prevVersion = updatedBehaviors.meta.version || '1.0';
+                      const parts = prevVersion.split('.');
+                      parts[1] = String(parseInt(parts[1] || 0) + 1);
+                      updatedBehaviors.meta.version = parts.join('.');
+                      updatedBehaviors.meta.last_updated = new Date().toISOString().split('T')[0];
+                      updatedBehaviors.meta.updated_by = 'Pattern Brain auto-update';
+                    }
+
+                    const newContent = JSON.stringify(updatedBehaviors, null, 2);
+
+                    // Create a branch for the PR
+                    const branchName = `pattern-brain/behaviors-update-${new Date().toISOString().slice(0,7)}`;
+
+                    // Get current file SHA
+                    const { data: currentFile } = await github.rest.repos.getContent({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      path: '.github/config/egyptian-behaviors.json',
+                    });
+
+                    // Get main branch SHA for branch creation
+                    const { data: mainRef } = await github.rest.git.getRef({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      ref: 'heads/main',
+                    });
+
+                    // Create new branch
+                    await github.rest.git.createRef({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      ref: `refs/heads/${branchName}`,
+                      sha: mainRef.object.sha,
+                    });
+
+                    // Update file on new branch
+                    await github.rest.repos.createOrUpdateFileContents({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      path: '.github/config/egyptian-behaviors.json',
+                      message: `[Pattern Brain] Propose behavioral config updates — ${month}`,
+                      content: Buffer.from(newContent).toString('base64'),
+                      sha: currentFile.sha,
+                      branch: branchName,
+                    });
+
+                    // Create PR
+                    const additionsList = (configProposal.proposed_additions || []).map(a =>
+                      `- **${a.category}**: "${a.new_behavior}"`
+                    ).join('\n');
+
+                    const { data: pr } = await github.rest.pulls.create({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      title: `[Pattern Brain] egyptian-behaviors.json update — ${month}`,
+                      body: `## Config Auto-Update Proposal — ${month}
+
+Generated by Pattern Brain based on ${closedWon.length} completed cycles and ${presellStalled.length} stalled pre-sells.
+
+### Summary
+${configProposal.summary}
+
+### Proposed Behavior Additions
+${additionsList || '*(None this month)*'}
+
+### Emphasis Changes
+${(configProposal.emphasis_changes || []).map(e => `- **${e.category}**: ${e.insight}`).join('\n') || '*(None this month)*'}
+
+### Review Instructions
+1. Read each proposed addition
+2. Ask: is this a SPECIFIC Egyptian behavioral moment, or generic?
+3. Remove any additions that are too generic
+4. Click **Merge** to apply, or **Close** to reject
+
+> This PR was auto-generated. You are the decision-maker. The filter is objective; you approve.
+
+---
+*Pattern Brain v5.0 — Config auto-update — NBSV v5.0*`,
+                      head: branchName,
+                      base: 'main',
+                    });
+
+                    configUpdatePRNumber = pr.number;
+                    console.log(`✓ Config update PR #${pr.number} created: ${branchName}`);
+                  } else {
+                    console.log('Config proposal: no changes recommended this month');
+                  }
+                }
+              } catch(configErr) {
+                console.log(`Config update step failed: ${configErr.message}`);
+              }
+            }
+
+            // ── 6. Post intelligence brief issue ─────────────────────────
+            const killTable = killSorted.map(([k,v]) => `| ${k} | ${v} | ${'█'.repeat(Math.min(v,10))} |`).join('\n');
+            const sourceTable = Object.entries({...sourceFailMap}).map(([k,v]) => {
+              const passes = sourcePassMap[k] || 0;
+              const total = v + passes;
+              const rate = total > 0 ? Math.round(passes/total*100) : 0;
+              return `| ${k.replace('source-','')} | ${v} fails | ${passes} passes | ${rate}% |`;
+            }).join('\n');
+
+            const briefBody = `# 🧠 Pattern Brain — Monthly Intelligence Brief — ${month}
+
+## AI Pattern Analysis
+
+${aiAnalysis}
+
+---
+
+## Kill Signal Frequency
+
+| Signal | Count | Frequency |
+|---|---|---|
+${killTable || '| No data yet | 0 | |'}
+
+## Source Channel Performance
+
+| Channel | Failures | Passes | Pass Rate |
+|---|---|---|---|
+${sourceTable || '| No data yet | — | — | — |'}
+
+## Pipeline Stats
+
+| Metric | Count |
+|---|---|
+| Total rejections | ${rejected.length} |
+| Filter passes | ${passed.length} |
+| Completed cycles | ${closedWon.length} |
+| Pre-sell stalled | ${presellStalled.length} |
+| Pass rate | ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}% |
+
+${configUpdatePRNumber ? `## ⚙️ Config Auto-Update\n\nPattern Brain proposed updates to \`egyptian-behaviors.json\` based on this month's outcomes.\n**[Review PR #${configUpdatePRNumber} →](../../pull/${configUpdatePRNumber})** — One-click approve or close.` : ''}
+
+---
+
+**Next step:** Feed this issue to NotebookLM monthly alongside your accumulated failure log for deeper cross-session pattern extraction.
+
+---
+*Pattern Brain v5.0 — Runs 1st of every month — NBSV v5.0*`;
+
+            const { data: briefIssue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🧠 Intelligence Brief — ${month}`,
+              body: briefBody,
+              labels: ['intelligence-brief', 'pattern-analysis'],
+            });
+
+            console.log(`✓ Intelligence brief: Issue #${briefIssue.number}`);
+            if (configUpdatePRNumber) console.log(`✓ Config update: PR #${configUpdatePRNumber}`);

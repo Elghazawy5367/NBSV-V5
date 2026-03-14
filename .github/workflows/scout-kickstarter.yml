@@ -1,0 +1,277 @@
+name: 💡 Scout Kickstarter — Live Campaign Discovery
+
+# ARCHITECTURE NOTE (v5.0):
+# Scans Kickstarter's public search API for physical product campaigns.
+# Kickstarter = Channel 2 (Concept Mine). Financial commitment from strangers
+# is the highest-confidence viral signal in the NBSV system.
+# Backers already paid before product existed = pre-validated demand.
+
+on:
+  schedule:
+    - cron: '0 7 * * 0'   # Every Sunday 07:00 UTC = 09:00 Egypt
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+  models: read
+
+jobs:
+  scout-kickstarter:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Search Kickstarter for physical product campaigns
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            console.log('💡 Scout Kickstarter starting...');
+
+            // ── 1. Search Kickstarter public API ──────────────────────────
+            // Searches product design + home + craft categories for live campaigns
+            const searchTerms = [
+              { term: 'home organizer', category: 16 },
+              { term: 'desk organizer', category: 16 },
+              { term: 'storage solution wood', category: 16 },
+              { term: 'gift box packaging', category: 16 },
+              { term: 'modular shelf', category: 16 },
+            ];
+
+            let allCampaigns = [];
+            for (const search of searchTerms) {
+              try {
+                const url = `https://www.kickstarter.com/projects/search.json?search=&term=${encodeURIComponent(search.term)}&category_id=${search.category}&sort=popularity`;
+                const res = await fetch(url, {
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; NBSV-Scout/5.0)',
+                    'Accept': 'application/json',
+                  }
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const projects = (data.projects || []).filter(p =>
+                    p.state === 'live' || p.state === 'successful'
+                  ).slice(0, 5);
+                  console.log(`✓ "${search.term}": ${projects.length} projects`);
+                  allCampaigns = allCampaigns.concat(projects.map(p => ({ ...p, searchTerm: search.term })));
+                } else {
+                  console.log(`⚠ Search "${search.term}": HTTP ${res.status}`);
+                }
+                // Rate limit protection
+                await new Promise(r => setTimeout(r, 1200));
+              } catch(e) {
+                console.log(`⚠ Search "${search.term}" failed: ${e.message}`);
+              }
+            }
+
+            // Deduplicate by project ID
+            const seen = new Set();
+            const uniqueCampaigns = allCampaigns.filter(p => {
+              if (seen.has(p.id)) return false;
+              seen.add(p.id);
+              return true;
+            });
+
+            console.log(`Total unique campaigns: ${uniqueCampaigns.length}`);
+
+            if (uniqueCampaigns.length === 0) {
+              console.log('No campaigns found. Kickstarter API may be restricted. Posting manual search notice.');
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `⚠ Scout Kickstarter — Manual Scan Needed ${new Date().toLocaleDateString('en-GB')}`,
+                body: `## Kickstarter Scout — Manual Fallback\n\nKickstarter API returned no results this week. Manually check:\n\n- [Product Design → Most Funded](https://www.kickstarter.com/discover/categories/product%20design?sort=most_funded)\n- [Crafts → Most Funded](https://www.kickstarter.com/discover/categories/crafts?sort=most_funded)\n- [Home → Most Backed](https://www.kickstarter.com/discover/categories/home?sort=most_backed)\n\nFilter: Live campaigns, Goal under $20,000, Physical product only.\n\n---\n*Scout Kickstarter v5.0 — NBSV v5.0*`,
+                labels: ['scout-error', 'manual-action-needed'],
+              });
+              return;
+            }
+
+            // ── 2. Deduplicate against existing scouted issues ─────────────
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'scout-kickstarter',
+              state: 'all',
+              per_page: 100,
+            });
+            const alreadyScouted = new Set(
+              existingIssues.map(i => {
+                const m = i.body?.match(/kickstarter\.com\/projects\/([^)\s]+)/);
+                return m ? m[1] : null;
+              }).filter(Boolean)
+            );
+
+            const newCampaigns = uniqueCampaigns.filter(p => {
+              const slug = p.urls?.web?.project?.replace('https://www.kickstarter.com/projects/', '');
+              return slug ? !alreadyScouted.has(slug) : true;
+            }).slice(0, 12);
+
+            console.log(`${newCampaigns.length} new campaigns to triage`);
+            if (newCampaigns.length === 0) { console.log('All campaigns already scouted.'); return; }
+
+            // ── 3. AI triage with GPT-4o-mini ──────────────────────────────
+            const campaignList = newCampaigns.map((p, i) => {
+              const backers = p.backers_count || 0;
+              const pledged = p.pledged ? Math.round(parseFloat(p.pledged)) : 0;
+              const goal = p.goal ? Math.round(parseFloat(p.goal)) : 0;
+              const pct = goal > 0 ? Math.round(pledged/goal*100) : 0;
+              return `[${i+1}] "${p.name || p.title}" | Backers: ${backers} | Funded: ${pct}% | Blurb: "${(p.blurb || '').slice(0,120)}"`;
+            }).join('\n');
+
+            const triagePrompt = `You are the NBSV Scout Triage Agent screening Kickstarter campaigns for an Egyptian micro-manufacturing business.
+
+NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally before they reach Egypt. Products must be workshop-producible from MDF/plywood/acrylic/aluminum/fabric/foam/EVA. ZERO electronics. Products must trigger AHA in 3 seconds on a shop shelf without explanation.
+
+CAMPAIGNS TO SCREEN:
+${campaignList}
+
+INSTANT KILL criteria:
+- Electronics required (any type)
+- Injection-molded plastic is the core structure
+- Apparel/clothing primary product  
+- Digital/app/software
+- Food, supplement, chemical
+- Medical or wearable health device
+- Scale impossible for small Egyptian workshop
+- Specialized machinery or tooling required
+
+BACKER COUNT guidance: 500+ backers = strong signal. 100-499 = decent. Under 100 = weak signal, lean FAIL unless extraordinary concept.
+
+RESPOND IN THIS EXACT FORMAT:
+[1] PASS/FAIL/INVESTIGATE | Kill or potential (max 10 words) | Egyptian fit angle (max 8 words)
+[2] PASS/FAIL/INVESTIGATE | ...
+
+Be decisive. Most should FAIL.`;
+
+            let triageResults = [];
+            try {
+              const aiRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                },
+                body: JSON.stringify({
+                  model: 'gpt-4o-mini',
+                  messages: [{ role: 'user', content: triagePrompt }],
+                  max_tokens: 700,
+                  temperature: 0.2,
+                }),
+              });
+
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                const rawText = aiData.choices?.[0]?.message?.content || '';
+                console.log('AI triage:\n' + rawText);
+                triageResults = rawText.split('\n')
+                  .filter(line => line.match(/^\[(\d+)\]/))
+                  .map(line => {
+                    const m = line.match(/^\[(\d+)\]\s+(PASS|FAIL|INVESTIGATE)\s*\|\s*([^|]+)\|\s*(.+)/);
+                    return m ? { index: parseInt(m[1])-1, verdict: m[2], reason: m[3].trim(), hint: m[4].trim() } : null;
+                  })
+                  .filter(Boolean);
+              } else {
+                console.log(`GitHub Models error ${aiRes.status} — fallback to top 3`);
+                triageResults = newCampaigns.slice(0, 3).map((_,i) => ({
+                  index: i, verdict: 'INVESTIGATE', reason: 'AI unavailable', hint: 'Manual review needed'
+                }));
+              }
+            } catch(e) {
+              console.log(`AI triage error: ${e.message}`);
+            }
+
+            // ── 4. Create Issues for PASS / INVESTIGATE ────────────────────
+            const toCreate = triageResults.filter(r => r.verdict !== 'FAIL');
+
+            for (const result of toCreate) {
+              const p = newCampaigns[result.index];
+              if (!p) continue;
+
+              const backers = p.backers_count || 0;
+              const pledged = p.pledged ? Math.round(parseFloat(p.pledged)) : 0;
+              const goal = p.goal ? Math.round(parseFloat(p.goal)) : 0;
+              const pct = goal > 0 ? Math.round(pledged/goal*100) : 0;
+              const projectUrl = p.urls?.web?.project || `https://www.kickstarter.com/projects/${p.id}`;
+
+              const labels = ['candidate', 'scout-kickstarter', 'source-concept-mine', 'pending-verification'];
+              if (backers >= 500) labels.push('high-signal');
+              if (result.verdict === 'INVESTIGATE') labels.push('needs-human-review');
+
+              const issueBody = `## 💡 Scout Kickstarter — Auto-Discovered Campaign
+*Discovered by Scout Kickstarter Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+
+---
+
+### Source
+**Platform:** Kickstarter
+**Campaign URL:** ${projectUrl}
+**Status:** ${p.state || 'unknown'}
+**Backers:** ${backers} | **Funded:** ${pct}% of $${goal.toLocaleString()} goal | **Raised:** $${pledged.toLocaleString()}
+**Search term that found it:** "${p.searchTerm}"
+
+### Product Name (internal reference)
+${(p.name || p.title || 'Unnamed').slice(0, 80)}
+
+### Source Channel
+Channel 2 — Concept Mine (Kickstarter / Makuake / Indiegogo)
+
+### Channel Signal (virality proof)
+Kickstarter backers: ${backers} | Funded: ${pct}%
+
+### Scout AI Triage
+**Verdict:** ${result.verdict}
+**Reason:** ${result.reason}
+**Egyptian fit hint:** ${result.hint}
+
+### What You Saw (campaign blurb)
+> "${p.blurb || 'Read full campaign at link above.'}"
+
+---
+
+### FOUNDER ACTION REQUIRED
+
+**Step 1:** Open campaign page and watch the video: [Open Campaign →](${projectUrl})
+**Step 2:** Does the AHA happen in 3 seconds? Is it workshop-producible?
+**Step 3:** Answer the Egyptian Behavior Question below
+**Step 4:** Check Egyptian market (5 platforms)
+
+### Egyptian Behavior Answer
+*(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
+
+### Egyptian Market Pre-Check
+- [ ] Jumia Egypt — exact product searched — CLEAN
+- [ ] Noon Egypt — exact product searched — CLEAN
+- [ ] Facebook Marketplace Egypt — CLEAN
+- [ ] Instagram Egypt — CLEAN
+- [ ] Google Lens reverse image — CLEAN
+
+### Likely Production Path
+*(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
+
+### Season Context
+*(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
+
+### Timing Note
+Kickstarter campaigns arrive in Egypt in 6–18 months. If the campaign is live, your window is open.
+If it's already successful (>1 year old), check 1688 for supplier count to confirm Egyptian market timing.
+
+---
+*Scout Kickstarter v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*`;
+
+              try {
+                const { data: newIssue } = await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🎯 [SCOUT-KS] ${(p.name || p.title || 'Unnamed').slice(0,75)} — ${backers} backers`,
+                  body: issueBody,
+                  labels,
+                });
+                console.log(`✓ Issue #${newIssue.number}: "${(p.name || '').slice(0,60)}" (${backers} backers)`);
+              } catch(e) {
+                console.log(`⚠ Issue creation failed: ${e.message}`);
+              }
+            }
+
+            console.log(`\nScout Kickstarter complete. ${toCreate.length} Issues created, ${triageResults.filter(r=>r.verdict==='FAIL').length} FAILs discarded.`);
