@@ -15,8 +15,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   verify-and-assess:
@@ -93,31 +95,31 @@ jobs:
 
               const assessmentPrompt = `You are evaluating whether a product likely already exists in the Egyptian retail market.
 
-PRODUCT: "${productName}"
-DESCRIPTION: ${whatYouSaw.slice(0, 300) || 'Not provided'}
-EGYPTIAN BEHAVIOR: ${egyptianBehavior.slice(0, 200) || 'Not provided'}
-SOURCE: ${sourceChannel}
+            PRODUCT: "${productName}"
+            DESCRIPTION: ${whatYouSaw.slice(0, 300) || 'Not provided'}
+            EGYPTIAN BEHAVIOR: ${egyptianBehavior.slice(0, 200) || 'Not provided'}
+            SOURCE: ${sourceChannel}
 
-TASK: Based on your knowledge of Egyptian retail (Jumia, Noon, Facebook Marketplace, physical shops, imports from China), estimate the probability this EXACT product or a very close equivalent already exists in Egypt.
+            TASK: Based on your knowledge of Egyptian retail (Jumia, Noon, Facebook Marketplace, physical shops, imports from China), estimate the probability this EXACT product or a very close equivalent already exists in Egypt.
 
-Consider:
-- Generic organizer/storage products → LIKELY FOUND (common)
-- Globally viral products from 2023-2024 → LIKELY FOUND (likely imported by now)
-- Very specific innovative mechanism that's novel → LIKELY CLEAR
-- Combination product with unique twist → UNCERTAIN
-- Recently emerged (2025-2026) with no mainstream distribution → LIKELY CLEAR
+            Consider:
+            - Generic organizer/storage products → LIKELY FOUND (common)
+            - Globally viral products from 2023-2024 → LIKELY FOUND (likely imported by now)
+            - Very specific innovative mechanism that's novel → LIKELY CLEAR
+            - Combination product with unique twist → UNCERTAIN
+            - Recently emerged (2025-2026) with no mainstream distribution → LIKELY CLEAR
 
-Respond ONLY in this JSON format (no other text):
-{
+            Respond ONLY in this JSON format (no other text):
+            {
   "verdict": "LIKELY_CLEAR" | "UNCERTAIN" | "LIKELY_FOUND",
   "confidence": 1-10,
   "reasoning": "2 sentences max",
   "better_search_terms": "3-4 specific keywords for Jumia/Noon search"
-}
+            }
 
-LIKELY_CLEAR = high confidence product NOT in Egyptian market (confidence 7+)
-UNCERTAIN = cannot determine without actual search (confidence 4-6)  
-LIKELY_FOUND = high confidence product IS in Egyptian market (confidence 7+)`;
+            LIKELY_CLEAR = high confidence product NOT in Egyptian market (confidence 7+)
+            UNCERTAIN = cannot determine without actual search (confidence 4-6)
+            LIKELY_FOUND = high confidence product IS in Egyptian market (confidence 7+)`;
 
               try {
                 const aiRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
@@ -182,38 +184,38 @@ LIKELY_FOUND = high confidence product IS in Egyptian market (confidence 7+)`;
               const betterNoon  = `https://www.noon.com/egypt-en/search/?q=${encodeURIComponent(betterKeywords)}`;
 
               const comment = `## 🔍 Gap Sentinel — Daily Verification Briefing
-*${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
 
----
+            ---
 
-### ${verdictEmoji} AI Pre-Assessment (GPT-4o)
-**${verdictLabel}**
-Confidence: ${aiAssessment.confidence}/10
+            ### ${verdictEmoji} AI Pre-Assessment (GPT-4o)
+            **${verdictLabel}**
+            Confidence: ${aiAssessment.confidence}/10
 
-> ${aiAssessment.reasoning}
+            > ${aiAssessment.reasoning}
 
-${actionInstruction}
+            ${actionInstruction}
 
----
+            ---
 
-### Principle #1 Verification Links
+            ### Principle #1 Verification Links
 
-AI-optimized search terms: \`${betterKeywords}\`
+            AI-optimized search terms: \`${betterKeywords}\`
 
-| Platform | Search Link | Your Result |
-|---|---|---|
-| Jumia Egypt | [Search Jumia →](${betterJumia}) | [ ] Clean [ ] Found |
-| Noon Egypt | [Search Noon →](${betterNoon}) | [ ] Clean [ ] Found |
-| Facebook Marketplace | [Search FB →](${fbUrl}) | [ ] Clean [ ] Found |
-| Instagram Egypt | [Search IG →](${igUrl}) | [ ] Clean [ ] Found |
-| Google Lens | [Open Lens →](${lensUrl}) (upload product screenshot) | [ ] Clean [ ] Found |
+            | Platform | Search Link | Your Result |
+            |---|---|---|
+            | Jumia Egypt | [Search Jumia →](${betterJumia}) | [ ] Clean [ ] Found |
+            | Noon Egypt | [Search Noon →](${betterNoon}) | [ ] Clean [ ] Found |
+            | Facebook Marketplace | [Search FB →](${fbUrl}) | [ ] Clean [ ] Found |
+            | Instagram Egypt | [Search IG →](${igUrl}) | [ ] Clean [ ] Found |
+            | Google Lens | [Open Lens →](${lensUrl}) (upload product screenshot) | [ ] Clean [ ] Found |
 
-**After checking, update labels:**
-- All 5 clean → add \`principle-1-pass\`
-- Any found → add \`market-blocked\` and close issue
+            **After checking, update labels:**
+            - All 5 clean → add \`principle-1-pass\`
+            - Any found → add \`market-blocked\` and close issue
 
----
-*Gap Sentinel v5.0 — Runs daily 09:00 Egypt — NBSV v5.0*`;
+            ---
+            *Gap Sentinel v5.0 — Runs daily 09:00 Egypt — NBSV v5.0*`;
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,

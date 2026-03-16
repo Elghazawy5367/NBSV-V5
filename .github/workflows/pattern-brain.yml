@@ -15,8 +15,9 @@ on:
 permissions:
   issues: write
   contents: write
-  pull-requests: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   analyze-and-update:
@@ -107,36 +108,36 @@ jobs:
             // ── 4. Call GPT-4o for pattern analysis ───────────────────────
             const analysisPrompt = `You are the NBSV Pattern Brain. Analyze failure and success patterns for an Egyptian micro-manufacturing fast-follower business.
 
-SYSTEM: Egyptian solo founder pre-sells locally-made products at zero capital risk. Products must: (1) Never been seen in Egypt, (2) AHA in 3 seconds, (3) Workshop producible, (4) Real Egyptian WTP.
+            SYSTEM: Egyptian solo founder pre-sells locally-made products at zero capital risk. Products must: (1) Never been seen in Egypt, (2) AHA in 3 seconds, (3) Workshop producible, (4) Real Egyptian WTP.
 
-REJECTION DATA (last 30 rejections):
-${failureSummary || 'None yet'}
+            REJECTION DATA (last 30 rejections):
+            ${failureSummary || 'None yet'}
 
-KILL SIGNAL FREQUENCY:
-${killSorted.map(([k,v]) => `${k}: ${v}x`).join('\n') || 'None'}
+            KILL SIGNAL FREQUENCY:
+            ${killSorted.map(([k,v]) => `${k}: ${v}x`).join('\n') || 'None'}
 
-SOURCE CHANNEL PERFORMANCE:
-Failures: ${Object.entries(sourceFailMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
-Passes: ${Object.entries(sourcePassMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
+            SOURCE CHANNEL PERFORMANCE:
+            Failures: ${Object.entries(sourceFailMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
+            Passes: ${Object.entries(sourcePassMap).map(([k,v]) => `${k}: ${v}`).join(', ') || 'None'}
 
-COMPLETED CYCLES (closed-won):
-${wonSummary}
+            COMPLETED CYCLES (closed-won):
+            ${wonSummary}
 
-PRE-SELL STALLED (validated but not sold):
-${presellStalled.map(i => `#${i.number}: "${i.title.slice(0,50)}"`).join('\n') || 'None'}
+            PRE-SELL STALLED (validated but not sold):
+            ${presellStalled.map(i => `#${i.number}: "${i.title.slice(0,50)}"`).join('\n') || 'None'}
 
-TOTAL STATS: ${rejected.length} rejected, ${passed.length} passed filter, ${closedWon.length} completed cycles
-Pass rate: ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}%
+            TOTAL STATS: ${rejected.length} rejected, ${passed.length} passed filter, ${closedWon.length} completed cycles
+            Pass rate: ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}%
 
-Provide monthly intelligence brief:
-1. TOP 3 PATTERNS — dominant kill signals and root cause
-2. SOURCE CHANNEL RANKING — which channel produces best signal/noise ratio
-3. STOP SCANNING — specific product types wasting scan time
-4. SCAN MORE — what patterns in passed candidates should guide next month
-5. FILTER CALIBRATION — are any kill signals being missed early?
-6. NEXT MONTH FOCUS — specific recommendation (consider Egypt is now in March 2026, Ramadan just ended, Eid El Adha ~June)
+            Provide monthly intelligence brief:
+            1. TOP 3 PATTERNS — dominant kill signals and root cause
+            2. SOURCE CHANNEL RANKING — which channel produces best signal/noise ratio
+            3. STOP SCANNING — specific product types wasting scan time
+            4. SCAN MORE — what patterns in passed candidates should guide next month
+            5. FILTER CALIBRATION — are any kill signals being missed early?
+            6. NEXT MONTH FOCUS — specific recommendation (consider Egypt is now in March 2026, Ramadan just ended, Eid El Adha ~June)
 
-Direct, no padding. Max 450 words.`;
+            Direct, no padding. Max 450 words.`;
 
             let aiAnalysis = '*(Pattern Brain: GitHub Models analysis unavailable)*';
             try {
@@ -166,23 +167,23 @@ Direct, no padding. Max 450 words.`;
 
               const configUpdatePrompt = `You are proposing updates to the NBSV egyptian-behaviors.json config file based on actual sales outcomes.
 
-CURRENT CONFIG CATEGORIES:
-${Object.entries(behaviorsJson).filter(([k]) => k !== 'meta' && k !== 'validation_rules').map(([k, v]) => `- ${k}: ${v.label}`).join('\n')}
+            CURRENT CONFIG CATEGORIES:
+            ${Object.entries(behaviorsJson).filter(([k]) => k !== 'meta' && k !== 'validation_rules').map(([k, v]) => `- ${k}: ${v.label}`).join('\n')}
 
-PRODUCTS THAT SOLD (closed-won):
-${wonSummary}
+            PRODUCTS THAT SOLD (closed-won):
+            ${wonSummary}
 
-PRODUCTS THAT PASSED FILTER BUT STALLED AT PRE-SELL:
-${presellStalled.map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
+            PRODUCTS THAT PASSED FILTER BUT STALLED AT PRE-SELL:
+            ${presellStalled.map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
 
-PRODUCTS THAT FAILED CULTURAL FIT CHECK:
-${rejected.filter(i => i.labels.some(l => l.name.includes('cultural') || l.name.includes('behavior'))).map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
+            PRODUCTS THAT FAILED CULTURAL FIT CHECK:
+            ${rejected.filter(i => i.labels.some(l => l.name.includes('cultural') || l.name.includes('behavior'))).map(i => `"${i.title.slice(0,60)}"`).join('\n') || 'None'}
 
-TASK: Propose SPECIFIC updates to the egyptian-behaviors.json file based on what sold vs. what stalled.
-Focus on: (1) new specific Egyptian behavior examples to add, (2) categories to emphasize more, (3) weak behavior examples to remove.
+            TASK: Propose SPECIFIC updates to the egyptian-behaviors.json file based on what sold vs. what stalled.
+            Focus on: (1) new specific Egyptian behavior examples to add, (2) categories to emphasize more, (3) weak behavior examples to remove.
 
-Respond ONLY in this JSON format (no other text):
-{
+            Respond ONLY in this JSON format (no other text):
+            {
   "proposed_additions": [
     { "category": "existing_category_key", "new_behavior": "Specific Egyptian behavior example (one sentence)" }
   ],
@@ -190,9 +191,9 @@ Respond ONLY in this JSON format (no other text):
     { "category": "category_key", "insight": "Why this category is showing stronger/weaker signal" }
   ],
   "summary": "2 sentence summary of proposed changes and why"
-}
+            }
 
-If there is insufficient data to make confident recommendations, return: {"proposed_additions": [], "emphasis_changes": [], "summary": "Insufficient outcome data for config updates this month."}`;
+            If there is insufficient data to make confident recommendations, return: {"proposed_additions": [], "emphasis_changes": [], "summary": "Insufficient outcome data for config updates this month."}`;
 
               try {
                 const configRes = await fetch('https://models.inference.ai.azure.com/chat/completions', {
@@ -283,27 +284,27 @@ If there is insufficient data to make confident recommendations, return: {"propo
                       title: `[Pattern Brain] egyptian-behaviors.json update — ${month}`,
                       body: `## Config Auto-Update Proposal — ${month}
 
-Generated by Pattern Brain based on ${closedWon.length} completed cycles and ${presellStalled.length} stalled pre-sells.
+            Generated by Pattern Brain based on ${closedWon.length} completed cycles and ${presellStalled.length} stalled pre-sells.
 
-### Summary
-${configProposal.summary}
+            ### Summary
+            ${configProposal.summary}
 
-### Proposed Behavior Additions
-${additionsList || '*(None this month)*'}
+            ### Proposed Behavior Additions
+            ${additionsList || '*(None this month)*'}
 
-### Emphasis Changes
-${(configProposal.emphasis_changes || []).map(e => `- **${e.category}**: ${e.insight}`).join('\n') || '*(None this month)*'}
+            ### Emphasis Changes
+            ${(configProposal.emphasis_changes || []).map(e => `- **${e.category}**: ${e.insight}`).join('\n') || '*(None this month)*'}
 
-### Review Instructions
-1. Read each proposed addition
-2. Ask: is this a SPECIFIC Egyptian behavioral moment, or generic?
-3. Remove any additions that are too generic
-4. Click **Merge** to apply, or **Close** to reject
+            ### Review Instructions
+            1. Read each proposed addition
+            2. Ask: is this a SPECIFIC Egyptian behavioral moment, or generic?
+            3. Remove any additions that are too generic
+            4. Click **Merge** to apply, or **Close** to reject
 
-> This PR was auto-generated. You are the decision-maker. The filter is objective; you approve.
+            > This PR was auto-generated. You are the decision-maker. The filter is objective; you approve.
 
----
-*Pattern Brain v5.0 — Config auto-update — NBSV v5.0*`,
+            ---
+            *Pattern Brain v5.0 — Config auto-update — NBSV v5.0*`,
                       head: branchName,
                       base: 'main',
                     });
@@ -330,42 +331,42 @@ ${(configProposal.emphasis_changes || []).map(e => `- **${e.category}**: ${e.ins
 
             const briefBody = `# 🧠 Pattern Brain — Monthly Intelligence Brief — ${month}
 
-## AI Pattern Analysis
+            ## AI Pattern Analysis
 
-${aiAnalysis}
+            ${aiAnalysis}
 
----
+            ---
 
-## Kill Signal Frequency
+            ## Kill Signal Frequency
 
-| Signal | Count | Frequency |
-|---|---|---|
-${killTable || '| No data yet | 0 | |'}
+            | Signal | Count | Frequency |
+            |---|---|---|
+            ${killTable || '| No data yet | 0 | |'}
 
-## Source Channel Performance
+            ## Source Channel Performance
 
-| Channel | Failures | Passes | Pass Rate |
-|---|---|---|---|
-${sourceTable || '| No data yet | — | — | — |'}
+            | Channel | Failures | Passes | Pass Rate |
+            |---|---|---|---|
+            ${sourceTable || '| No data yet | — | — | — |'}
 
-## Pipeline Stats
+            ## Pipeline Stats
 
-| Metric | Count |
-|---|---|
-| Total rejections | ${rejected.length} |
-| Filter passes | ${passed.length} |
-| Completed cycles | ${closedWon.length} |
-| Pre-sell stalled | ${presellStalled.length} |
-| Pass rate | ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}% |
+            | Metric | Count |
+            |---|---|
+            | Total rejections | ${rejected.length} |
+            | Filter passes | ${passed.length} |
+            | Completed cycles | ${closedWon.length} |
+            | Pre-sell stalled | ${presellStalled.length} |
+            | Pass rate | ${rejected.length + passed.length > 0 ? Math.round(passed.length / (rejected.length + passed.length) * 100) : 0}% |
 
-${configUpdatePRNumber ? `## ⚙️ Config Auto-Update\n\nPattern Brain proposed updates to \`egyptian-behaviors.json\` based on this month's outcomes.\n**[Review PR #${configUpdatePRNumber} →](../../pull/${configUpdatePRNumber})** — One-click approve or close.` : ''}
+            ${configUpdatePRNumber ? `## ⚙️ Config Auto-Update\n\nPattern Brain proposed updates to \`egyptian-behaviors.json\` based on this month's outcomes.\n**[Review PR #${configUpdatePRNumber} →](../../pull/${configUpdatePRNumber})** — One-click approve or close.` : ''}
 
----
+            ---
 
-**Next step:** Feed this issue to NotebookLM monthly alongside your accumulated failure log for deeper cross-session pattern extraction.
+            **Next step:** Feed this issue to NotebookLM monthly alongside your accumulated failure log for deeper cross-session pattern extraction.
 
----
-*Pattern Brain v5.0 — Runs 1st of every month — NBSV v5.0*`;
+            ---
+            *Pattern Brain v5.0 — Runs 1st of every month — NBSV v5.0*`;
 
             const { data: briefIssue } = await github.rest.issues.create({
               owner: context.repo.owner,

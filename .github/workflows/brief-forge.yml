@@ -9,11 +9,14 @@ name: ⚙️ Brief Forge — Auto Workshop Spec Generator
 on:
   issues:
     types: [labeled]
+  workflow_dispatch:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   generate-workshop-brief:
@@ -58,54 +61,54 @@ jobs:
             // Mistral-large selected for manufacturing vocabulary strength.
             const briefPrompt = `You are the NBSV Brief Forge. Generate a production-ready workshop brief for an Egyptian micro-manufacturing business.
 
-PRODUCT: ${productName}
-DESCRIPTION: ${whatYouSaw.slice(0, 500)}
-EGYPTIAN USE CASE: ${egyptianBehavior.slice(0, 200)}
-PRODUCTION PATH: ${productionPath}
-SOURCE: ${source}
-FOUNDER COGS ESTIMATE: ${cogsEstimate || 'Not provided'}
+            PRODUCT: ${productName}
+            DESCRIPTION: ${whatYouSaw.slice(0, 500)}
+            EGYPTIAN USE CASE: ${egyptianBehavior.slice(0, 200)}
+            PRODUCTION PATH: ${productionPath}
+            SOURCE: ${source}
+            FOUNDER COGS ESTIMATE: ${cogsEstimate || 'Not provided'}
 
-PRODUCTION RULES (NON-NEGOTIABLE):
-- Materials: MDF / plywood / solid wood / acrylic / aluminum sheet / standard fabric / foam / EVA / standard hardware ONLY
-- Zero electronics of any kind
-- Zero injection molding
-- Zero imported core components  
-- Maximum 6 assembly steps
-- Workshop produces in 1–2 days
-- COGS target: ≤${isSemiDiy ? '120' : '80'} EGP at batch 30
-${isSemiDiy ? '- Base structure from workshop; founder adds finish (sanding, staining, felt, hardware, paint) — max 20 min/unit' : ''}
+            PRODUCTION RULES (NON-NEGOTIABLE):
+            - Materials: MDF / plywood / solid wood / acrylic / aluminum sheet / standard fabric / foam / EVA / standard hardware ONLY
+            - Zero electronics of any kind
+            - Zero injection molding
+            - Zero imported core components
+            - Maximum 6 assembly steps
+            - Workshop produces in 1–2 days
+            - COGS target: ≤${isSemiDiy ? '120' : '80'} EGP at batch 30
+            ${isSemiDiy ? '- Base structure from workshop; founder adds finish (sanding, staining, felt, hardware, paint) — max 20 min/unit' : ''}
 
-Generate in this exact structure:
+            Generate in this exact structure:
 
-## WORKSHOP BRIEF (WhatsApp message — copy-paste ready)
+            ## WORKSHOP BRIEF (WhatsApp message — copy-paste ready)
 
-[Write a WhatsApp message in English that a workshop owner would understand immediately. Include: what to make, materials, batch size, target unit cost, maximum 6 numbered assembly steps, QC instruction (first 3 units photo via WhatsApp before full batch), timeline request. Never mention what you're selling or where. Never mention profit margins.]
+            [Write a WhatsApp message in English that a workshop owner would understand immediately. Include: what to make, materials, batch size, target unit cost, maximum 6 numbered assembly steps, QC instruction (first 3 units photo via WhatsApp before full batch), timeline request. Never mention what you're selling or where. Never mention profit margins.]
 
----
+            ---
 
-## COGS ESTIMATE TABLE
+            ## COGS ESTIMATE TABLE
 
-| Item | Cost per unit (EGP) |
-|---|---|
-| Materials | X |
-| Labor | X |
-${isSemiDiy ? '| Finish materials (founder) | X |\n' : ''}| Packaging | X |
-| **Total COGS** | **X** |
-| Wholesale target | X |
-| Retail target | X |
-| Margin at wholesale | X% |
+            | Item | Cost per unit (EGP) |
+            |---|---|
+            | Materials | X |
+            | Labor | X |
+            ${isSemiDiy ? '| Finish materials (founder) | X |\n' : ''}| Packaging | X |
+            | **Total COGS** | **X** |
+            | Wholesale target | X |
+            | Retail target | X |
+            | Margin at wholesale | X% |
 
----
+            ---
 
-## PRE-SELL SCRIPT (what to say to shop owners)
+            ## PRE-SELL SCRIPT (what to say to shop owners)
 
-[Write the exact words to say when showing the video/prototype to a shop owner. Max 3 sentences. Include: views/backer count signal, "nobody in Egypt has seen it", exclusive offer for their area. Never describe the product — the video does that.]
+            [Write the exact words to say when showing the video/prototype to a shop owner. Max 3 sentences. Include: views/backer count signal, "nobody in Egypt has seen it", exclusive offer for their area. Never describe the product — the video does that.]
 
----
+            ---
 
-## PRODUCTION RISKS
+            ## PRODUCTION RISKS
 
-[2-3 bullet points: material sourcing risks, complexity risks, QC watchpoints. Be specific to this product.]`;
+            [2-3 bullet points: material sourcing risks, complexity risks, QC watchpoints. Be specific to this product.]`;
 
             let briefContent = '*(Brief Forge: GitHub Models call failed — retry by removing and re-adding `principle-3-pass` label)*';
 
@@ -159,26 +162,26 @@ ${isSemiDiy ? '| Finish materials (founder) | X |\n' : ''}| Packaging | X |
 
             // ── Post complete brief as issue comment ──────────────────────
             const commentBody = `# ⚙️ Brief Forge — Workshop Production Brief
-*Auto-generated on ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
-*Model: Mistral-large | Production path: ${productionPath}*${isScout ? ' | Source: Scout-discovered candidate' : ''}
+            *Auto-generated on ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *Model: Mistral-large | Production path: ${productionPath}*${isScout ? ' | Source: Scout-discovered candidate' : ''}
 
----
+            ---
 
-${briefContent}
+            ${briefContent}
 
----
+            ---
 
-### Next Steps
-1. Copy the WhatsApp brief above → send to workshop
-2. Negotiate: confirm materials availability + timeline
-3. Use pre-sell script → show video to 3+ shop owners
-4. 2+ confirm with 50% deposit → add label \`pre-sell-confirmed\`
-5. Fewer than 2 confirm → add label \`presell-fail\` and close issue
+            ### Next Steps
+            1. Copy the WhatsApp brief above → send to workshop
+            2. Negotiate: confirm materials availability + timeline
+            3. Use pre-sell script → show video to 3+ shop owners
+            4. 2+ confirm with 50% deposit → add label \`pre-sell-confirmed\`
+            5. Fewer than 2 confirm → add label \`presell-fail\` and close issue
 
-**RULE:** Never show workshop and shop owner the same information. Workshop knows what to make. Shop owner sees the video.
+            **RULE:** Never show workshop and shop owner the same information. Workshop knows what to make. Shop owner sees the video.
 
----
-*Brief Forge v5.0 — Triggered by \`principle-3-pass\` label — NBSV v5.0*`;
+            ---
+            *Brief Forge v5.0 — Triggered by \`principle-3-pass\` label — NBSV v5.0*`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,

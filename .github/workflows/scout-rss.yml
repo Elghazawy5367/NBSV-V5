@@ -13,8 +13,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   scout-rss:
@@ -104,29 +106,29 @@ jobs:
 
             const triagePrompt = `You are the NBSV Scout Triage Agent screening design concept articles for an Egyptian micro-manufacturing business.
 
-NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally before they reach Egypt. Products must be workshop-producible from MDF/plywood/acrylic/aluminum/fabric/foam/EVA with ZERO electronics. Products must trigger an AHA response in 3 seconds on a shop shelf without explanation.
+            NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally before they reach Egypt. Products must be workshop-producible from MDF/plywood/acrylic/aluminum/fabric/foam/EVA with ZERO electronics. Products must trigger an AHA response in 3 seconds on a shop shelf without explanation.
 
-ARTICLES TO SCREEN:
-${itemList}
+            ARTICLES TO SCREEN:
+            ${itemList}
 
-INSTANT KILL criteria — mark FAIL if ANY applies:
-- Electronic component required (LED, battery, USB, sensor, motor, screen)
-- Injection-molded plastic is the core component
-- Digital/app/software product
-- Medical, food, chemical, or consumable
-- Architectural/building-scale project
-- Conceptual art piece with no commercial application
-- Scale or complexity impossible for small workshop
-- Core material must be imported
+            INSTANT KILL criteria — mark FAIL if ANY applies:
+            - Electronic component required (LED, battery, USB, sensor, motor, screen)
+            - Injection-molded plastic is the core component
+            - Digital/app/software product
+            - Medical, food, chemical, or consumable
+            - Architectural/building-scale project
+            - Conceptual art piece with no commercial application
+            - Scale or complexity impossible for small workshop
+            - Core material must be imported
 
-RESPOND IN THIS EXACT FORMAT:
-[1] PASS/FAIL/INVESTIGATE | Kill reason or potential (max 10 words) | Egyptian behavior match hint (max 8 words)
-[2] PASS/FAIL/INVESTIGATE | ...
+            RESPOND IN THIS EXACT FORMAT:
+            [1] PASS/FAIL/INVESTIGATE | Kill reason or potential (max 10 words) | Egyptian behavior match hint (max 8 words)
+            [2] PASS/FAIL/INVESTIGATE | ...
 
-PASS = physically producible concept with Egyptian potential
-FAIL = instant kill triggered
-INVESTIGATE = interesting but uncertain about producibility
-Be ruthless. Most design concept articles are not workshop-producible.`;
+            PASS = physically producible concept with Egyptian potential
+            FAIL = instant kill triggered
+            INVESTIGATE = interesting but uncertain about producibility
+            Be ruthless. Most design concept articles are not workshop-producible.`;
 
             let triageResults = [];
             try {
@@ -177,59 +179,59 @@ Be ruthless. Most design concept articles are not workshop-producible.`;
               if (result.verdict === 'INVESTIGATE') labels.push('needs-human-review');
 
               const issueBody = `## 📡 Scout RSS — Auto-Discovered Design Concept
-*Discovered by Scout RSS Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *Discovered by Scout RSS Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
 
----
+            ---
 
-### Source
-**Publication:** ${item.source}
-**Article URL:** ${item.link}
-${item.pubDate ? `**Published:** ${item.pubDate}` : ''}
+            ### Source
+            **Publication:** ${item.source}
+            **Article URL:** ${item.link}
+            ${item.pubDate ? `**Published:** ${item.pubDate}` : ''}
 
-### Product Name (internal reference)
-${item.title.slice(0, 80)}
+            ### Product Name (internal reference)
+            ${item.title.slice(0, 80)}
 
-### Source Channel
-Channel 3 — Concept Library (Yanko / Core77 / Behance / Reddit)
+            ### Source Channel
+            Channel 3 — Concept Library (Yanko / Core77 / Behance / Reddit)
 
-### Channel Signal (virality proof)
-${item.source} feature — high editorial curation signal
+            ### Channel Signal (virality proof)
+            ${item.source} feature — high editorial curation signal
 
-### Scout AI Triage
-**Verdict:** ${result.verdict}
-**Reason:** ${result.reason}
-**Egyptian fit hint:** ${result.hint}
+            ### Scout AI Triage
+            **Verdict:** ${result.verdict}
+            **Reason:** ${result.reason}
+            **Egyptian fit hint:** ${result.hint}
 
-### What You Saw (from article)
-> ${item.desc || 'Read full article at link above.'}
+            ### What You Saw (from article)
+            > ${item.desc || 'Read full article at link above.'}
 
----
+            ---
 
-### FOUNDER ACTION REQUIRED
+            ### FOUNDER ACTION REQUIRED
 
-**Step 1:** Read full article: [Open Article →](${item.link})
-**Step 2:** Answer the Egyptian Behavior Question below
-**Step 3:** Check if the concept is actually physically producible — can you describe it to a workshop owner in one sentence?
-**Step 4:** Check Egyptian market (5 platforms) — Gap Sentinel posts links in 24h
+            **Step 1:** Read full article: [Open Article →](${item.link})
+            **Step 2:** Answer the Egyptian Behavior Question below
+            **Step 3:** Check if the concept is actually physically producible — can you describe it to a workshop owner in one sentence?
+            **Step 4:** Check Egyptian market (5 platforms) — Gap Sentinel posts links in 24h
 
-### Egyptian Behavior Answer
-*(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
+            ### Egyptian Behavior Answer
+            *(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
 
-### Egyptian Market Pre-Check
-- [ ] Jumia Egypt — exact product searched — CLEAN
-- [ ] Noon Egypt — exact product searched — CLEAN
-- [ ] Facebook Marketplace Egypt — CLEAN
-- [ ] Instagram Egypt — CLEAN
-- [ ] Google Lens reverse image — CLEAN
+            ### Egyptian Market Pre-Check
+            - [ ] Jumia Egypt — exact product searched — CLEAN
+            - [ ] Noon Egypt — exact product searched — CLEAN
+            - [ ] Facebook Marketplace Egypt — CLEAN
+            - [ ] Instagram Egypt — CLEAN
+            - [ ] Google Lens reverse image — CLEAN
 
-### Likely Production Path
-*(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
+            ### Likely Production Path
+            *(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
 
-### Season Context
-*(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
+            ### Season Context
+            *(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
 
----
-*Scout RSS v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*`;
+            ---
+            *Scout RSS v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*`;
 
               try {
                 const { data: newIssue } = await github.rest.issues.create({

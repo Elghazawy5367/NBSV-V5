@@ -13,8 +13,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   scout-kickstarter:
@@ -122,28 +124,28 @@ jobs:
 
             const triagePrompt = `You are the NBSV Scout Triage Agent screening Kickstarter campaigns for an Egyptian micro-manufacturing business.
 
-NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally before they reach Egypt. Products must be workshop-producible from MDF/plywood/acrylic/aluminum/fabric/foam/EVA. ZERO electronics. Products must trigger AHA in 3 seconds on a shop shelf without explanation.
+            NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally before they reach Egypt. Products must be workshop-producible from MDF/plywood/acrylic/aluminum/fabric/foam/EVA. ZERO electronics. Products must trigger AHA in 3 seconds on a shop shelf without explanation.
 
-CAMPAIGNS TO SCREEN:
-${campaignList}
+            CAMPAIGNS TO SCREEN:
+            ${campaignList}
 
-INSTANT KILL criteria:
-- Electronics required (any type)
-- Injection-molded plastic is the core structure
-- Apparel/clothing primary product  
-- Digital/app/software
-- Food, supplement, chemical
-- Medical or wearable health device
-- Scale impossible for small Egyptian workshop
-- Specialized machinery or tooling required
+            INSTANT KILL criteria:
+            - Electronics required (any type)
+            - Injection-molded plastic is the core structure
+            - Apparel/clothing primary product
+            - Digital/app/software
+            - Food, supplement, chemical
+            - Medical or wearable health device
+            - Scale impossible for small Egyptian workshop
+            - Specialized machinery or tooling required
 
-BACKER COUNT guidance: 500+ backers = strong signal. 100-499 = decent. Under 100 = weak signal, lean FAIL unless extraordinary concept.
+            BACKER COUNT guidance: 500+ backers = strong signal. 100-499 = decent. Under 100 = weak signal, lean FAIL unless extraordinary concept.
 
-RESPOND IN THIS EXACT FORMAT:
-[1] PASS/FAIL/INVESTIGATE | Kill or potential (max 10 words) | Egyptian fit angle (max 8 words)
-[2] PASS/FAIL/INVESTIGATE | ...
+            RESPOND IN THIS EXACT FORMAT:
+            [1] PASS/FAIL/INVESTIGATE | Kill or potential (max 10 words) | Egyptian fit angle (max 8 words)
+            [2] PASS/FAIL/INVESTIGATE | ...
 
-Be decisive. Most should FAIL.`;
+            Be decisive. Most should FAIL.`;
 
             let triageResults = [];
             try {
@@ -200,65 +202,65 @@ Be decisive. Most should FAIL.`;
               if (result.verdict === 'INVESTIGATE') labels.push('needs-human-review');
 
               const issueBody = `## 💡 Scout Kickstarter — Auto-Discovered Campaign
-*Discovered by Scout Kickstarter Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *Discovered by Scout Kickstarter Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
 
----
+            ---
 
-### Source
-**Platform:** Kickstarter
-**Campaign URL:** ${projectUrl}
-**Status:** ${p.state || 'unknown'}
-**Backers:** ${backers} | **Funded:** ${pct}% of $${goal.toLocaleString()} goal | **Raised:** $${pledged.toLocaleString()}
-**Search term that found it:** "${p.searchTerm}"
+            ### Source
+            **Platform:** Kickstarter
+            **Campaign URL:** ${projectUrl}
+            **Status:** ${p.state || 'unknown'}
+            **Backers:** ${backers} | **Funded:** ${pct}% of $${goal.toLocaleString()} goal | **Raised:** $${pledged.toLocaleString()}
+            **Search term that found it:** "${p.searchTerm}"
 
-### Product Name (internal reference)
-${(p.name || p.title || 'Unnamed').slice(0, 80)}
+            ### Product Name (internal reference)
+            ${(p.name || p.title || 'Unnamed').slice(0, 80)}
 
-### Source Channel
-Channel 2 — Concept Mine (Kickstarter / Makuake / Indiegogo)
+            ### Source Channel
+            Channel 2 — Concept Mine (Kickstarter / Makuake / Indiegogo)
 
-### Channel Signal (virality proof)
-Kickstarter backers: ${backers} | Funded: ${pct}%
+            ### Channel Signal (virality proof)
+            Kickstarter backers: ${backers} | Funded: ${pct}%
 
-### Scout AI Triage
-**Verdict:** ${result.verdict}
-**Reason:** ${result.reason}
-**Egyptian fit hint:** ${result.hint}
+            ### Scout AI Triage
+            **Verdict:** ${result.verdict}
+            **Reason:** ${result.reason}
+            **Egyptian fit hint:** ${result.hint}
 
-### What You Saw (campaign blurb)
-> "${p.blurb || 'Read full campaign at link above.'}"
+            ### What You Saw (campaign blurb)
+            > "${p.blurb || 'Read full campaign at link above.'}"
 
----
+            ---
 
-### FOUNDER ACTION REQUIRED
+            ### FOUNDER ACTION REQUIRED
 
-**Step 1:** Open campaign page and watch the video: [Open Campaign →](${projectUrl})
-**Step 2:** Does the AHA happen in 3 seconds? Is it workshop-producible?
-**Step 3:** Answer the Egyptian Behavior Question below
-**Step 4:** Check Egyptian market (5 platforms)
+            **Step 1:** Open campaign page and watch the video: [Open Campaign →](${projectUrl})
+            **Step 2:** Does the AHA happen in 3 seconds? Is it workshop-producible?
+            **Step 3:** Answer the Egyptian Behavior Question below
+            **Step 4:** Check Egyptian market (5 platforms)
 
-### Egyptian Behavior Answer
-*(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
+            ### Egyptian Behavior Answer
+            *(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
 
-### Egyptian Market Pre-Check
-- [ ] Jumia Egypt — exact product searched — CLEAN
-- [ ] Noon Egypt — exact product searched — CLEAN
-- [ ] Facebook Marketplace Egypt — CLEAN
-- [ ] Instagram Egypt — CLEAN
-- [ ] Google Lens reverse image — CLEAN
+            ### Egyptian Market Pre-Check
+            - [ ] Jumia Egypt — exact product searched — CLEAN
+            - [ ] Noon Egypt — exact product searched — CLEAN
+            - [ ] Facebook Marketplace Egypt — CLEAN
+            - [ ] Instagram Egypt — CLEAN
+            - [ ] Google Lens reverse image — CLEAN
 
-### Likely Production Path
-*(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
+            ### Likely Production Path
+            *(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
 
-### Season Context
-*(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
+            ### Season Context
+            *(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
 
-### Timing Note
-Kickstarter campaigns arrive in Egypt in 6–18 months. If the campaign is live, your window is open.
-If it's already successful (>1 year old), check 1688 for supplier count to confirm Egyptian market timing.
+            ### Timing Note
+            Kickstarter campaigns arrive in Egypt in 6–18 months. If the campaign is live, your window is open.
+            If it's already successful (>1 year old), check 1688 for supplier count to confirm Egyptian market timing.
 
----
-*Scout Kickstarter v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*`;
+            ---
+            *Scout Kickstarter v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*`;
 
               try {
                 const { data: newIssue } = await github.rest.issues.create({

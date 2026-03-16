@@ -21,8 +21,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   scan-github-for-designs:
@@ -135,14 +137,14 @@ jobs:
                   model: 'gpt-4o-mini',
                   messages: [{
                     role: 'user',
-                    content: `You are the NBSV system. Review these GitHub repos found this week. 
-For Egyptian micro-manufacturing: products must be AHA in 3 seconds, producible in MDF/acrylic/aluminum/fabric/foam (no electronics, no injection mold), COGS ≤80 EGP.
+                    content: `You are the NBSV system. Review these GitHub repos found this week.
+            For Egyptian micro-manufacturing: products must be AHA in 3 seconds, producible in MDF/acrylic/aluminum/fabric/foam (no electronics, no injection mold), COGS ≤80 EGP.
 
-REPOS FOUND:
-${discoveryList}
+            REPOS FOUND:
+            ${discoveryList}
 
-For each repo score: HIGH / MEDIUM / LOW potential. One sentence per repo explaining why.
-Then identify the TOP 1-2 repos to investigate further. Max 200 words total.`
+            For each repo score: HIGH / MEDIUM / LOW potential. One sentence per repo explaining why.
+            Then identify the TOP 1-2 repos to investigate further. Max 200 words total.`
                   }],
                   max_tokens: 300,
                   temperature: 0.2,
@@ -159,47 +161,47 @@ Then identify the TOP 1-2 repos to investigate further. Max 200 words total.`
 
             const issueBody = `## 🕵️ GitHub Intelligence Report — Week of ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}
 
-**Repos scanned:** ${searches.length} queries × top 5 results
-**New this week:** ${newRepos.length} repos updated in last 7 days
+            **Repos scanned:** ${searches.length} queries × top 5 results
+            **New this week:** ${newRepos.length} repos updated in last 7 days
 
----
+            ---
 
-## AI Scoring
+            ## AI Scoring
 
-${aiAnalysis}
+            ${aiAnalysis}
 
----
+            ---
 
-## Full Discovery Table
+            ## Full Discovery Table
 
-| Repo | Category | Stars | Updated |
-|---|---|---|---|
-${repoTable}
+            | Repo | Category | Stars | Updated |
+            |---|---|---|---|
+            ${repoTable}
 
----
+            ---
 
-## Action Required
+            ## Action Required
 
-For each HIGH/MEDIUM repo above:
-1. Click the repo link — look for \`.dxf\`, \`.svg\`, or design concept files
-2. Download any promising file → send to workshop for COGS quote
-3. If a product concept (no file): run through NBSV 3-question filter
-4. Open a [New Candidate Issue](../issues/new?template=candidate-scan.yml) for any that pass initial review
+            For each HIGH/MEDIUM repo above:
+            1. Click the repo link — look for \`.dxf\`, \`.svg\`, or design concept files
+            2. Download any promising file → send to workshop for COGS quote
+            3. If a product concept (no file): run through NBSV 3-question filter
+            4. Open a [New Candidate Issue](../issues/new?template=candidate-scan.yml) for any that pass initial review
 
----
+            ---
 
-### GitHub Code Search (run manually)
-These searches find actual design FILES, not just repos:
+            ### GitHub Code Search (run manually)
+            These searches find actual design FILES, not just repos:
 
-\`\`\`
-https://github.com/search?q=organizer+extension%3Adxf&type=code
-https://github.com/search?q=tray+storage+extension%3Asvg+laser&type=code
-https://github.com/search?q=desk+organizer+extension%3Adxf+stars%3A%3E10&type=code
-\`\`\`
+            \`\`\`
+            https://github.com/search?q=organizer+extension%3Adxf&type=code
+            https://github.com/search?q=tray+storage+extension%3Asvg+laser&type=code
+            https://github.com/search?q=desk+organizer+extension%3Adxf+stars%3A%3E10&type=code
+            \`\`\`
 
----
-*GitHub Intelligence Agent — Runs every Sunday — NBSV v4.0*
-*Searches: ${searches.map(s => s.category).join(' · ')}*`;
+            ---
+            *GitHub Intelligence Agent — Runs every Sunday — NBSV v4.0*
+            *Searches: ${searches.map(s => s.category).join(' · ')}*`;
 
             // Create weekly intelligence issue
             const { data: created } = await github.rest.issues.create({

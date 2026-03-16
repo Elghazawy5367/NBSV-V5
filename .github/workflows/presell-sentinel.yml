@@ -9,7 +9,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
+  models: read
+  pull-requests: write
+  actions: write
 
 jobs:
 
@@ -65,23 +68,23 @@ jobs:
                   nudgeLevel = 'REMINDER';
                   nudgeBody = `## 💰 Presell Sentinel — Nudge (Day ${daysSinceBrief})
 
-This candidate has been brief-ready for **${daysSinceBrief} days** with no deposit confirmation logged.
+            This candidate has been brief-ready for **${daysSinceBrief} days** with no deposit confirmation logged.
 
-**Pre-sell rule:** Production cannot start until 2 shop owners confirm with 50% deposit.
+            **Pre-sell rule:** Production cannot start until 2 shop owners confirm with 50% deposit.
 
-### Shop Visit Checklist
-- [ ] Visit Shop 1 — show video — record response as comment here
-- [ ] Visit Shop 2 — show video — record response as comment here  
-- [ ] Visit Shop 3 (backup) — show video
+            ### Shop Visit Checklist
+            - [ ] Visit Shop 1 — show video — record response as comment here
+            - [ ] Visit Shop 2 — show video — record response as comment here
+            - [ ] Visit Shop 3 (backup) — show video
 
-**If 2 shops confirm:** Add label \`pre-sell-confirmed\` to this issue.
-**If fewer than 2 confirm after 3 visits:** Add label \`presell-fail\` and close issue. Log in failure log.
+            **If 2 shops confirm:** Add label \`pre-sell-confirmed\` to this issue.
+            **If fewer than 2 confirm after 3 visits:** Add label \`presell-fail\` and close issue. Log in failure log.
 
-**Script (say exactly this):**
-> *"This has [X] million views. Nobody in Egypt has seen it yet. I can make it here. Do you want to be the first shop in [area] to carry it?"*
+            **Script (say exactly this):**
+            > *"This has [X] million views. Nobody in Egypt has seen it yet. I can make it here. Do you want to be the first shop in [area] to carry it?"*
 
----
-*Presell Sentinel — NBSV Rule #1: Never produce without 2 deposits*`;
+            ---
+            *Presell Sentinel — NBSV Rule #1: Never produce without 2 deposits*`;
 
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
@@ -120,26 +123,26 @@ This candidate has been brief-ready for **${daysSinceBrief} days** with no depos
 
             const activationMessage = `## ✅ Production Activated — Pre-Sell Confirmed
 
-2+ shop deposits confirmed. **NBSV Rule #1 satisfied.** Production may now begin.
+            2+ shop deposits confirmed. **NBSV Rule #1 satisfied.** Production may now begin.
 
-### Production Checklist
-- [ ] Collect shop deposits (minimum 50% per shop)
-- [ ] Shop deposits transferred to workshop as deposit — personal capital used: **zero**
-- [ ] Workshop brief sent (see above comment from Brief Forge)
-- [ ] Workshop confirmed timeline and price
-${isSemiDiy ? '- [ ] Finishing station ready (sandpaper, stain, felt, hardware)\n- [ ] Base structure inspection via WhatsApp (first 3 units) before finishing' : ''}
-- [ ] **QC checkpoint:** WhatsApp photo of first 3 units before approving full batch
-- [ ] Batch approved → full production proceeds
-- [ ] Delivery day: place on counter, say nothing, watch
-- [ ] Reveal video posted same day as delivery
+            ### Production Checklist
+            - [ ] Collect shop deposits (minimum 50% per shop)
+            - [ ] Shop deposits transferred to workshop as deposit — personal capital used: **zero**
+            - [ ] Workshop brief sent (see above comment from Brief Forge)
+            - [ ] Workshop confirmed timeline and price
+            ${isSemiDiy ? '- [ ] Finishing station ready (sandpaper, stain, felt, hardware)\n- [ ] Base structure inspection via WhatsApp (first 3 units) before finishing' : ''}
+            - [ ] **QC checkpoint:** WhatsApp photo of first 3 units before approving full batch
+            - [ ] Batch approved → full production proceeds
+            - [ ] Delivery day: place on counter, say nothing, watch
+            - [ ] Reveal video posted same day as delivery
 
-### Labels to Add as Product Progresses
-- When workshop starts: \`in-production\`
-- When QC approved: remove \`in-production\`, add \`distributed\`
-- When cycle complete: \`closed-won\`
+            ### Labels to Add as Product Progresses
+            - When workshop starts: \`in-production\`
+            - When QC approved: remove \`in-production\`, add \`distributed\`
+            - When cycle complete: \`closed-won\`
 
----
-*Presell Sentinel — Production pathway activated — NBSV v4.0*`;
+            ---
+            *Presell Sentinel — Production pathway activated — NBSV v4.0*`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,

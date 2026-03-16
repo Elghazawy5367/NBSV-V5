@@ -29,8 +29,9 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
   actions: write
 
 jobs:
@@ -99,30 +100,30 @@ jobs:
             // ── Run GPT-4o 3-question filter ─────────────────────────────
             const filterPrompt = `You are the NBSV Decision Engine v5.0. Run the 3-Question Filter on this candidate.
 
-PRODUCT: ${productName}
-SOURCE: ${sourceChannel}
-SIGNAL: ${channelSignal}
-DESCRIPTION: ${whatYouSaw.slice(0,500)}
-EGYPTIAN BEHAVIOR ANSWER: ${egyptianBehavior || 'NOT PROVIDED'}
-PRODUCTION PATH: ${productionPath}
-SEASON: ${seasonContext}
-MARKET CHECKS: ${marketCheckMatches.length}/5 verified
+            PRODUCT: ${productName}
+            SOURCE: ${sourceChannel}
+            SIGNAL: ${channelSignal}
+            DESCRIPTION: ${whatYouSaw.slice(0,500)}
+            EGYPTIAN BEHAVIOR ANSWER: ${egyptianBehavior || 'NOT PROVIDED'}
+            PRODUCTION PATH: ${productionPath}
+            SEASON: ${seasonContext}
+            MARKET CHECKS: ${marketCheckMatches.length}/5 verified
 
-FILTER RULES:
-Q1 — Never Before Seen in Egypt: Market checks ${marketCheckMatches.length >= 5 ? 'complete' : `incomplete (${marketCheckMatches.length}/5) — flag this`}
-Q2 — AHA in 3 seconds: Stranger picks it up unprompted from shelf. No sign, no demo. 2 of 4 involuntary reactions needed: "How did no one think of this?" / "I need this now" / "I have to show someone" / "Looks expensive but isn't". Egyptian behavior answer must name a SPECIFIC Egyptian daily moment, not generic.
-Q3 — Workshop Producible: Green-list materials only (MDF/plywood/acrylic/aluminum/fabric/foam/EVA/hardware). Zero electronics. Zero injection mold. Zero imported core. ≤6 steps. COGS ≤80 EGP standard / ≤120 EGP Semi-DIY.
+            FILTER RULES:
+            Q1 — Never Before Seen in Egypt: Market checks ${marketCheckMatches.length >= 5 ? 'complete' : `incomplete (${marketCheckMatches.length}/5) — flag this`}
+            Q2 — AHA in 3 seconds: Stranger picks it up unprompted from shelf. No sign, no demo. 2 of 4 involuntary reactions needed: "How did no one think of this?" / "I need this now" / "I have to show someone" / "Looks expensive but isn't". Egyptian behavior answer must name a SPECIFIC Egyptian daily moment, not generic.
+            Q3 — Workshop Producible: Green-list materials only (MDF/plywood/acrylic/aluminum/fabric/foam/EVA/hardware). Zero electronics. Zero injection mold. Zero imported core. ≤6 steps. COGS ≤80 EGP standard / ≤120 EGP Semi-DIY.
 
-RESPOND IN EXACTLY THIS FORMAT:
-VERDICT: [PASS / FAIL / INVESTIGATE]
-KILLED AT: Q[1/2/3] — [one sentence kill reason] (only if FAIL)
+            RESPOND IN EXACTLY THIS FORMAT:
+            VERDICT: [PASS / FAIL / INVESTIGATE]
+            KILLED AT: Q[1/2/3] — [one sentence kill reason] (only if FAIL)
 
-Q1: [2 sentences on market presence assessment]
-Q2: [3 sentences including evaluation of Egyptian behavior answer quality — strong/weak/absent]
-Q3: [2 sentences + COGS range estimate in EGP]
+            Q1: [2 sentences on market presence assessment]
+            Q2: [3 sentences including evaluation of Egyptian behavior answer quality — strong/weak/absent]
+            Q3: [2 sentences + COGS range estimate in EGP]
 
-PRODUCTION PATH: [Standard / Semi-DIY / Unknown — one sentence reasoning]
-URGENCY: [Seasonal or Continuous — timing note if season-amplified]`;
+            PRODUCTION PATH: [Standard / Semi-DIY / Unknown — one sentence reasoning]
+            URGENCY: [Seasonal or Continuous — timing note if season-amplified]`;
 
             let filterResult = '*(Filter: GitHub Models unavailable — apply filter manually via Claude Project)*';
 
@@ -171,15 +172,15 @@ URGENCY: [Seasonal or Continuous — timing note if season-amplified]`;
               owner: context.repo.owner, repo: context.repo.repo,
               issue_number: issue.number,
               body: `## ${verdictEmoji} Orchestrator — AI Filter Result (GPT-4o)
-*Run at ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *Run at ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
 
----
+            ---
 
-${filterResult}
+            ${filterResult}
 
----
+            ---
 
-${isPass ? `### Next Steps for PASS
+            ${isPass ? `### Next Steps for PASS
 1. Verify Q1 manually — Gap Sentinel posts links in 24h
 2. If all 5 platforms clean → add label \`principle-1-pass\`
 3. Add label \`principle-3-pass\` → Brief Forge auto-generates workshop spec (Mistral-large)` : ''}

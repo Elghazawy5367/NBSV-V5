@@ -9,6 +9,10 @@ on:
 
 permissions:
   issues: write
+  contents: write
+  models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   create-labels:

@@ -12,8 +12,10 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write
   models: read
+  pull-requests: write
+  actions: write
 
 jobs:
   scout-reddit:
@@ -92,29 +94,29 @@ jobs:
 
             const triagePrompt = `You are the NBSV Scout Triage Agent. Evaluate these Reddit posts from r/somebodymakethis for the Egyptian NBSV system.
 
-NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally using MDF/plywood/acrylic/aluminum/fabric/foam before they reach Egypt. Products must be: (1) Never seen in Egypt, (2) AHA in 3 seconds on a shop shelf, (3) Producible with basic workshop tools, zero electronics.
+            NBSV SYSTEM: Egyptian solo founder reproduces physically innovative products locally using MDF/plywood/acrylic/aluminum/fabric/foam before they reach Egypt. Products must be: (1) Never seen in Egypt, (2) AHA in 3 seconds on a shop shelf, (3) Producible with basic workshop tools, zero electronics.
 
-POSTS TO EVALUATE:
-${postList}
+            POSTS TO EVALUATE:
+            ${postList}
 
-For each post, evaluate against these INSTANT KILL criteria:
-- Electronics, motors, sensors, batteries of any kind → KILL
-- Injection-molded plastic components → KILL  
-- Digital/software/app product → KILL
-- Food, consumables, or chemicals → KILL
-- Service, not a physical product → KILL
-- Too complex for a small workshop → KILL
-- Cultural context specific to Western/non-Egyptian life only → borderline, flag for review
+            For each post, evaluate against these INSTANT KILL criteria:
+            - Electronics, motors, sensors, batteries of any kind → KILL
+            - Injection-molded plastic components → KILL
+            - Digital/software/app product → KILL
+            - Food, consumables, or chemicals → KILL
+            - Service, not a physical product → KILL
+            - Too complex for a small workshop → KILL
+            - Cultural context specific to Western/non-Egyptian life only → borderline, flag for review
 
-RESPOND IN THIS EXACT FORMAT (one line per post):
-[1] PASS/FAIL/INVESTIGATE | Reason (max 8 words) | Egyptian fit hint (max 8 words)
-[2] PASS/FAIL/INVESTIGATE | ...
-... (continue for all posts)
+            RESPOND IN THIS EXACT FORMAT (one line per post):
+            [1] PASS/FAIL/INVESTIGATE | Reason (max 8 words) | Egyptian fit hint (max 8 words)
+            [2] PASS/FAIL/INVESTIGATE | ...
+            ... (continue for all posts)
 
-PASS = clear potential, no instant kills
-FAIL = instant kill triggered
-INVESTIGATE = interesting but uncertain, worth human review
-Be decisive. Most should be FAIL. Only genuinely promising ones should PASS or INVESTIGATE.`;
+            PASS = clear potential, no instant kills
+            FAIL = instant kill triggered
+            INVESTIGATE = interesting but uncertain, worth human review
+            Be decisive. Most should be FAIL. Only genuinely promising ones should PASS or INVESTIGATE.`;
 
             let triageResults = [];
             try {
@@ -171,63 +173,63 @@ Be decisive. Most should be FAIL. Only genuinely promising ones should PASS or I
               if (result.verdict === 'INVESTIGATE') labels.push('needs-human-review');
 
               const issueBody = `## 🕵️ Scout Reddit — Auto-Discovered Candidate
-*Discovered by Scout Reddit Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
+            *Discovered by Scout Reddit Agent — ${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}*
 
----
+            ---
 
-### Source
-**Platform:** r/somebodymakethis (Reddit)
-**Post URL:** https://reddit.com${post.permalink}
-**Upvotes:** ${post.score} | **Comments:** ${post.num_comments}
-**Posted:** ${new Date(post.created_utc * 1000).toLocaleDateString('en-GB')}
+            ### Source
+            **Platform:** r/somebodymakethis (Reddit)
+            **Post URL:** https://reddit.com${post.permalink}
+            **Upvotes:** ${post.score} | **Comments:** ${post.num_comments}
+            **Posted:** ${new Date(post.created_utc * 1000).toLocaleDateString('en-GB')}
 
-### Product Name (internal reference)
-${post.title.slice(0, 80)}
+            ### Product Name (internal reference)
+            ${post.title.slice(0, 80)}
 
-### Source Channel
-Channel 3 — Concept Library (Yanko / Core77 / Behance / Reddit)
+            ### Source Channel
+            Channel 3 — Concept Library (Yanko / Core77 / Behance / Reddit)
 
-### Channel Signal (virality proof)
-Reddit upvotes: ${post.score} | Comments: ${post.num_comments}
+            ### Channel Signal (virality proof)
+            Reddit upvotes: ${post.score} | Comments: ${post.num_comments}
 
-### Scout AI Triage
-**Verdict:** ${result.verdict}
-**Reason:** ${result.reason}
-**Egyptian fit hint:** ${result.hint}
+            ### Scout AI Triage
+            **Verdict:** ${result.verdict}
+            **Reason:** ${result.reason}
+            **Egyptian fit hint:** ${result.hint}
 
-### What You Saw — Full Post Title
-> "${post.title}"
+            ### What You Saw — Full Post Title
+            > "${post.title}"
 
-${post.selftext ? `### Post Description (excerpt)\n> ${post.selftext.slice(0, 400)}${post.selftext.length > 400 ? '...' : ''}` : ''}
+            ${post.selftext ? `### Post Description (excerpt)\n> ${post.selftext.slice(0, 400)}${post.selftext.length > 400 ? '...' : ''}` : ''}
 
----
+            ---
 
-### FOUNDER ACTION REQUIRED
+            ### FOUNDER ACTION REQUIRED
 
-**Step 1:** Read the full Reddit post: [Open Post →](https://reddit.com${post.permalink})
-**Step 2:** Answer the Egyptian Behavior Question below
-**Step 3:** Check Egyptian market (5 platforms) — gap sentinel will post links in 24h
-**Step 4:** Apply Q2 + Q3 filter manually (or paste to Claude Project for assessment)
+            **Step 1:** Read the full Reddit post: [Open Post →](https://reddit.com${post.permalink})
+            **Step 2:** Answer the Egyptian Behavior Question below
+            **Step 3:** Check Egyptian market (5 platforms) — gap sentinel will post links in 24h
+            **Step 4:** Apply Q2 + Q3 filter manually (or paste to Claude Project for assessment)
 
-### Egyptian Behavior Answer
-*(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
+            ### Egyptian Behavior Answer
+            *(Replace this line — What SPECIFIC Egyptian behavior does this replace or enhance?)*
 
-### Egyptian Market Pre-Check
-- [ ] Jumia Egypt — exact product searched — CLEAN
-- [ ] Noon Egypt — exact product searched — CLEAN
-- [ ] Facebook Marketplace Egypt — CLEAN
-- [ ] Instagram Egypt — CLEAN
-- [ ] Google Lens reverse image — CLEAN
+            ### Egyptian Market Pre-Check
+            - [ ] Jumia Egypt — exact product searched — CLEAN
+            - [ ] Noon Egypt — exact product searched — CLEAN
+            - [ ] Facebook Marketplace Egypt — CLEAN
+            - [ ] Instagram Egypt — CLEAN
+            - [ ] Google Lens reverse image — CLEAN
 
-### Likely Production Path
-*(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
+            ### Likely Production Path
+            *(Standard Workshop ≤80 EGP / Semi-DIY Finish ≤120 EGP / Unknown)*
 
-### Season Context
-*(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
+            ### Season Context
+            *(Continuous Demand / Ramadan / Eid / Back to School / etc.)*
 
----
-*Scout Reddit v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*
-*If this candidate fails any filter question, label \`rejected\` and add the appropriate kill signal label.*`;
+            ---
+            *Scout Reddit v5.0 — Auto-created by NBSV Agent Swarm — NBSV v5.0*
+            *If this candidate fails any filter question, label \`rejected\` and add the appropriate kill signal label.*`;
 
               try {
                 const { data: newIssue } = await github.rest.issues.create({
